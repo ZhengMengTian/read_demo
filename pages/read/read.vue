@@ -221,7 +221,7 @@
 				wait: false   ,//翻至章节交接时，会导致翻至空白页bug,需要等待章节轮换
 				nextPageLoaded: false,   //下一章是否加载完毕
 				prePageLoaded: false,   //上一章是否加载完毕
-				turePage: false,   //加载章节后是否跳转页面
+				trunPage: false,   //加载章节后是否跳转页面
 			}
 		},
 		onLoad() {
@@ -332,8 +332,8 @@
 					let width = data.width;
 					let height = data.height;
 					this.prePages = this.genPages(width, height)
-					if (this.turePage) {
-						this.turePage = false;
+					if (this.trunPage) {
+						this.trunPage = false;
 						this.prePage()
 					}
 				}).exec();
@@ -348,8 +348,8 @@
 					let width = data.width;
 					let height = data.height;
 					this.nextPages = this.genPages(width, height)
-					if (this.turePage) {
-						this.turePage = false;
+					if (this.trunPage) {
+						this.trunPage = false;
 						this.nextPage()
 					}
 				}).exec();
@@ -362,6 +362,7 @@
 			genPages(width, height) {
 				let arr = [];
 				let id = 0;
+				// #ifdef APP-PLUS
 				if (this.platform === 'ios') {
 					while (height > 0) {
 						arr.push({
@@ -384,6 +385,18 @@
 						width -= this.contentWidth + this.columnGap
 					}
 				}
+				// #endif
+				// #ifndef APP-PLUS
+				while (width > 0) {
+					arr.push({
+						id,
+						zIndex: 200 - id,
+						translateX: 0
+					});
+					id++;
+					width -= this.contentWidth + this.columnGap
+				}
+				// #endif
 				return arr;
 			},
 			
@@ -441,7 +454,7 @@
 					if (deltaX < 0) {
 						if (this.currentPage === this.pages.length - 1) {  //如果翻至最后一页
 							if (!this.nextPageLoaded) {
-								this.turePage = true;
+								this.trunPage = true;
 								uni.showLoading({
 									mask: true,
 									title: '正在加载中请稍候'
@@ -465,7 +478,7 @@
 					else {
 						if (this.currentPage === 0) {  //如果是第一页
 							if (!this.prePageLoaded) {
-								this.turePage = true;
+								this.trunPage = true;
 								uni.showLoading({
 									mask: true,
 									title: '正在加载中请稍候'
@@ -516,7 +529,7 @@
 				}
 				if (this.currentPage === 0) {
 					if (!this.prePageLoaded) {
-						this.turePage = true;
+						this.trunPage = true;
 						uni.showLoading({
 							mask: true,
 							title: '正在加载中请稍候'
@@ -561,7 +574,7 @@
 				}
 				if (this.currentPage === this.pages.length - 1) {
 					if (!this.nextPageLoaded) {
-						this.turePage = true;
+						this.trunPage = true;
 						uni.showLoading({
 							mask: true,
 							title: '正在加载中请稍候'
