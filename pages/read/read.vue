@@ -223,6 +223,7 @@
 
 <script>
 	import myProgress from '../../components/myProgress.vue'
+	import {traditionalized} from '../../utils/utils.js'
 	export default {
 		components:{
 			myProgress
