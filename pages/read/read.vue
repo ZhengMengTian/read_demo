@@ -3,10 +3,7 @@
 	<view>
 		
 		<!-- 操作层 -->
-		<view class="action" @touchstart.stop="touchStart" @touchend.stop="touchEnd" @touchmove.stop="touchMove">
-			<view class="item left" @click.stop="prePage"></view>
-			<view class="item mid" @click.stop="showMenu"></view>
-			<view class="item right" @click.stop="nextPage"></view>
+		<view class="action" @touchstart="touchStart" @touchend="touchEnd" @touchmove="touchMove">
 		</view>
 		
 		<!-- 仅用于计算 -->
@@ -139,47 +136,97 @@
 		</view>
 		
 		<!-- 菜单层 -->
+		<view class="menu" :style="{height: `${windowHeight}px`, width: `${windowWidth}px`,background: directoryShow?'rgba(0, 0, 0, .5)':''}" 
+		v-if="menuShow" @touchend="closeMenu">
 			
-		<view class="top" :style="{height: `${statusBarHeight + 30}px`, top: menuShow ? 0 : `-${statusBarHeight + 30}px`}">
-			<view :style="{height: `${statusBarHeight}px`}"></view>
-			<view class="head">
-				<view class="back" @click="back">返回</view>
-				<view>
-					{{chapterName}}
+			<view class="menu-top" :style="{height: `${statusBarHeight + 40}px`, top: itemShow ? 0 : `-100%`}" @touchend.stop>
+				<view :style="{height: `${statusBarHeight}px`}"></view>
+				<view class="head">
+					<text class="iconfont back" @click="back">&#xe71a;</text>
+					<view>
+						{{chapterName}}
+					</view>
 				</view>
 			</view>
-		</view>
-		<view class="bottom" :style="{bottom: menuShow ? 0 : `-300px`}">
-			<view class="item">
-				<view class="item-name">字号</view>
-				<view class="icon" @click.stop="bigSize">A+</view>
-				<view class="icon" @click.stop="smallSize">A-</view>
-			</view>
-			<view class="item">
-				<view class="item-name">排版</view>
-				<view class="type-setting" :class="{active: lineHeight === 1}" @click.stop="changeLineHeight(1)">
-					<view class="line" :class="{active: lineHeight === 1}" v-for="i in 5" :key="i"></view>
-				</view>
-				<view class="type-setting" :class="{active: lineHeight === 1.5}" @click.stop="changeLineHeight(1.5)">
-					<view class="line" :class="{active: lineHeight === 1.5}" v-for="i in 4" :key="i"></view>
-				</view>
-				<view class="type-setting" :class="{active: lineHeight === 2}" @click.stop="changeLineHeight(2)">
-					<view class="line" :class="{active: lineHeight === 2}" v-for="i in 3" :key="i"></view>
-				</view>
-			</view>
-			<view class="item">
-				<view class="item-name">背景</view>
-				<view class="icon" style="background: url(../../static/background1.jpg);" :class="{active: background === 0}" @click.stop="changeBackground(0)"></view>
-				<view class="icon" style="background-color: #000;" :class="{active: background === 1}" @click.stop="changeBackground(1)"></view>
-			</view>
-		</view>
 			
+			<view class="menu-bottom" :style="{bottom: itemShow ? 0 : '-100%'}" @touchend.stop>
+				<view class="show-page">{{currentPage + 1 }}/{{pages.length}}</view>
+				<view class="progress-box">
+					<text @click="preChapter">上一章</text>
+					<view style="flex: 1;height: 100%;padding: 0 10px;">
+						<my-progress :total="pages.length - 1 || 1" :index="currentPage" @indexChange="goToPage"></my-progress>
+					</view>
+					<text @click="nextChapter">下一章</text>
+				</view>
+				<view class="items-box">
+					<view class="item-box" @click="openDirectory">
+						<text class="iconfont" style="font-size: 25px;">&#xe601;</text>
+						<text style="font-size: 13px;">目录</text>
+					</view>
+					<view class="item-box" v-if="background === 1" @click="changeBackground(0)">
+						<text class="iconfont" style="font-size: 25px;">&#xe63e;</text>
+						<text style="font-size: 13px;">夜间</text>
+					</view>
+					<view class="item-box" v-else @click="changeBackground(1)">
+						<text class="iconfont" style="font-size: 25px;">&#xe64c;</text>
+						<text style="font-size: 13px;">日间</text>
+					</view>
+					<view class="item-box" @click="openSetting">
+						<text class="iconfont" style="font-size: 25px;">&#xe61d;</text>
+						<text style="font-size: 13px;">设置</text>
+					</view>
+					
+				</view>
+			</view>
+			
+			<view class="setting" :style="{bottom: settingShow ? 0 : `-100%`}" @touchend.stop>
+				<view class="item">
+					<view class="item-name">字号</view>
+					<view class="icon" @click="bigSize">A+</view>
+					<view class="icon" @click="smallSize">A-</view>
+				</view>
+				<view class="item">
+					<view class="item-name">排版</view>
+					<view class="type-setting" :class="{active: lineHeight === 1}" @click="changeLineHeight(1)">
+						<view class="line" :class="{active: lineHeight === 1}" v-for="i in 5" :key="i"></view>
+					</view>
+					<view class="type-setting" :class="{active: lineHeight === 1.5}" @click="changeLineHeight(1.5)">
+						<view class="line" :class="{active: lineHeight === 1.5}" v-for="i in 4" :key="i"></view>
+					</view>
+					<view class="type-setting" :class="{active: lineHeight === 2}" @click="changeLineHeight(2)">
+						<view class="line" :class="{active: lineHeight === 2}" v-for="i in 3" :key="i"></view>
+					</view>
+				</view>
+				<view class="item">
+					<view class="item-name">背景</view>
+					<view class="icon" style="background: url(../../static/background1.jpg);" :class="{active: background === 0}" @click="changeBackground(0)"></view>
+					<view class="icon" style="background-color: #000;" :class="{active: background === 1}" @click="changeBackground(1)"></view>
+				</view>
+			</view>
+			
+			<!-- 目录层 -->
+			<view class="directory" :class="{container0: background === 0, container1: background === 1}"
+			 :style="{left: directoryShow ? 0 : '-100%',color: `${colorList[background]}`}"  @touchend.stop>
+				<view class="bookname">书名</view>
+				<scroll-view scroll-y="true" class="directory-list" :scroll-into-view="`chapter${chapterId}`">
+					<view v-for="item of directoryList" :key="item.chapterId" class="directory-listItem" :class="{active: item.chapterId === chapterId}"
+					 :id="`chapter${item.chapterId}`" @click="goToChapter(item.chapterId)">
+						{{item.name}}
+					</view>
+				</scroll-view>
+			</view>
+			
+		</view>
 		
 	</view>
 </template>
 
 <script>
+	import myProgress from '../../components/myProgress.vue'
 	export default {
+		components:{
+			myProgress
+		},
 		data() {
 			return {
 				chapterId: '',
@@ -190,6 +237,7 @@
 				text: '',
 				nextText: '',
 				preText: '',
+				directoryList: [],  //目录列表
 				preTranslateX: 0,  //上一章的位移
 				
 				showAnimation: false, //是否开启动画
@@ -203,14 +251,17 @@
 				platform: '',  //设备
 				batteryState: '', //电池状态
 				batteryLevel: '', //电量
-				
 				statusBarHeight: 0, //状态栏高度
+				
 				columnGap: 40,
 				currentPage: 0,
 				touchStartX: 0,  // 触屏起始点
 				touchStartT: 0,  //触屏起始时间
 				touchTimer: null  ,//用于触摸节流
-				menuShow: false,
+				menuShow: false,  //菜单栏box是否渲染
+				itemShow: false,  // 菜单栏动画控制
+				settingShow: false,  //设置栏动画控制
+				directoryShow: false,  //目录动画控制
 				turnPageTime: 0.5,  //翻页动画时间
 				
 				fontSize: '',
@@ -218,10 +269,9 @@
 				background: '',
 				colorList: ['#000', '#666'],
 				
-				wait: false   ,//翻至章节交接时，会导致翻至空白页bug,需要等待章节轮换
-				nextPageLoaded: false,   //下一章是否加载完毕
-				prePageLoaded: false,   //上一章是否加载完毕
-				trunPage: false,   //加载章节后是否跳转页面
+				nextChapterLoaded: false,   //下一章是否加载完毕
+				prechapterLoaded: false,   //上一章是否加载完毕
+				turnChapter: false,   //加载章节后是否跳转页面
 			}
 		},
 		onLoad() {
@@ -332,9 +382,9 @@
 					let width = data.width;
 					let height = data.height;
 					this.prePages = this.genPages(width, height)
-					if (this.trunPage) {
-						this.trunPage = false;
-						this.prePage()
+					if (this.turnChapter) {
+						this.turnChapter = false;
+						this.preChapter()
 					}
 				}).exec();
 			},
@@ -348,9 +398,9 @@
 					let width = data.width;
 					let height = data.height;
 					this.nextPages = this.genPages(width, height)
-					if (this.trunPage) {
-						this.trunPage = false;
-						this.nextPage()
+					if (this.turnChapter) {
+						this.turnChapter = false;
+						this.nextChapter()
 					}
 				}).exec();
 			},
@@ -415,31 +465,44 @@
 			touchEnd(e) {
 				this.showAnimation = true;
 				let deltaX = e.changedTouches[0].clientX - this.touchStartX;
-				if (deltaX > this.windowWidth/2) {
-					this.prePage()
-				}
-				else if (deltaX < -this.windowWidth/2) {
-					this.nextPage()
-				}
-				else {
-					let v = 0;
-					v = deltaX / (e.timeStamp - this.touchStartT);
-					if (v <= 0.1 && v > 0) {  //翻页速度慢，取消翻页
-						if (this.currentPage !== 0) {
-							this.pages[this.currentPage - 1].translateX = -this.windowWidth - 20;
-						}
-						else {
-							this.preTranslateX = -this.windowWidth - 20;
-						}
-					}
-					else if (v >= -0.1 && v < 0) {  //翻页速度慢，取消翻页
-						this.pages[this.currentPage].translateX = 0;
-					}
-					else if(v > 0.1) {
+				if (deltaX === 0) {  //deltaX === 0为点击
+					if (e.changedTouches[0].clientX<this.windowWidth/3) {
 						this.prePage()
 					}
-					else if (v < -0.1) {
+					else if (e.changedTouches[0].clientX>this.windowWidth/3*2) {
 						this.nextPage()
+					}
+					else {
+						this.showMenu()
+					}
+				}
+				else {
+					if (deltaX > this.windowWidth/2) {
+						this.prePage()
+					}
+					else if (deltaX < -this.windowWidth/2) {
+						this.nextPage()
+					}
+					else {
+						let v = 0;
+						v = deltaX / (e.timeStamp - this.touchStartT);
+						if (v <= 0.1 && v > 0) {  //翻页速度慢，取消翻页
+							if (this.currentPage !== 0) {
+								this.pages[this.currentPage - 1].translateX = -this.windowWidth - 20;
+							}
+							else {
+								this.preTranslateX = -this.windowWidth - 20;
+							}
+						}
+						else if (v >= -0.1 && v < 0) {  //翻页速度慢，取消翻页
+							this.pages[this.currentPage].translateX = 0;
+						}
+						else if(v > 0.1) {
+							this.prePage()
+						}
+						else if (v < -0.1) {
+							this.nextPage()
+						}
 					}
 				}
 			},
@@ -448,13 +511,12 @@
 			* 触摸
 			**/
 			touchMove(e) {
-				
 				if (!this.touchTimer) {
 					let deltaX = e.touches[0].clientX - this.touchStartX;
 					if (deltaX < 0) {
 						if (this.currentPage === this.pages.length - 1) {  //如果翻至最后一页
-							if (!this.nextPageLoaded) {
-								this.trunPage = true;
+							if (!this.nextChapterLoaded) {
+								this.turnChapter = true;
 								uni.showLoading({
 									mask: true,
 									title: '正在加载中请稍候'
@@ -477,8 +539,8 @@
 					}
 					else {
 						if (this.currentPage === 0) {  //如果是第一页
-							if (!this.prePageLoaded) {
-								this.trunPage = true;
+							if (!this.prechapterLoaded) {
+								this.turnChapter = true;
 								uni.showLoading({
 									mask: true,
 									title: '正在加载中请稍候'
@@ -510,30 +572,60 @@
 			**/
 			showMenu() {
 				// #ifdef APP-PLUS
-					// plus.navigator.setFullscreen(this.menuShow);
+					plus.navigator.setFullscreen(false);
 				// #endif
-				this.menuShow = !this.menuShow;
+				this.menuShow = true;
+				setTimeout(() => {
+					this.itemShow = true
+				},100)
 			},
 			
+			/**
+			* 关闭菜单
+			**/
+			closeMenu() {
+				// #ifdef APP-PLUS
+					plus.navigator.setFullscreen(true);
+				// #endif
+				this.itemShow = false
+				this.settingShow = false
+				this.directoryShow = false
+				setTimeout(() => {
+					this.menuShow = false
+				},300)
+			},
+			
+			/**
+			* 关闭菜单栏，呼出设置栏
+			**/
+			openSetting() {
+				
+				this.itemShow = false
+				setTimeout(() => {
+					this.settingShow = true
+				},300)
+			},
+			
+			/**
+			* 关闭菜单栏，呼出目录栏
+			**/
+			openDirectory() {
+				// #ifdef APP-PLUS
+					plus.navigator.setFullscreen(true);
+				// #endif
+				this.itemShow = false
+				setTimeout(() => {
+					this.directoryShow = true
+				},300)
+			},
 			
 			/**
 			* 上一页
 			**/
 			prePage() {
-				if (this.menuShow) {
-					this.menuShow = false;
-					// #ifdef APP-PLUS
-						// plus.navigator.setFullscreen(true);
-					// #endif
-					return
-				}
 				if (this.currentPage === 0) {
-					if (!this.prePageLoaded) {
-						this.trunPage = true;
-						uni.showLoading({
-							mask: true,
-							title: '正在加载中请稍候'
-						})
+					if (!this.prechapterLoaded) {
+						this.preChapter()
 						return
 					}
 					if ( this.preText.length === 0) {
@@ -542,8 +634,7 @@
 							icon: 'none'
 						})
 					}
-					else if (!this.wait) {
-						this.wait = true;
+					else  {
 						uni.showToast({
 							title: this.preChapterName,
 							icon: 'none'
@@ -565,20 +656,9 @@
 			* 下一页
 			**/
 			nextPage() {
-				if (this.menuShow) {
-					this.menuShow = false;
-					// #ifdef APP-PLUS
-						// plus.navigator.setFullscreen(true);
-					// #endif
-					return
-				}
 				if (this.currentPage === this.pages.length - 1) {
-					if (!this.nextPageLoaded) {
-						this.trunPage = true;
-						uni.showLoading({
-							mask: true,
-							title: '正在加载中请稍候'
-						})
+					if (!this.nextChapterLoaded) {  //下一章未加载完毕
+						this.nextChapter()
 						return
 					}
 					if ( this.nextText.length === 0) {
@@ -587,8 +667,7 @@
 							icon: 'none'
 						})
 					}
-					else if (!this.wait) {
-						this.wait = true;
+					else {
 						uni.showToast({
 							title: this.nextChapterName,
 							icon: 'none'
@@ -611,6 +690,14 @@
 			* 获取下一章,重置页面，将本章变为前一章，将下一章变为本章，获取下一章内容
 			**/
 			nextChapter() {
+				if (!this.nextChapterLoaded) {
+					this.turnChapter = true;
+					uni.showLoading({
+						mask: true,
+						title: '正在加载中请稍候'
+					})
+					return
+				}
 				this.chapterId++;
 				this.preText = this.text;
 				this.text = this.nextText;
@@ -625,7 +712,6 @@
 				this.preChapterName = this.chapterName;
 				this.chapterName = this.nextChapterName;
 				this.nextChapterName = '';
-				this.wait = false;
 				this.currentPage = 0;
 				this.goToPage(this.currentPage)
 				
@@ -635,6 +721,14 @@
 			* 获取上一章,重置页面，将本章变为后一章，将上一章变为本章，获取上一章内容
 			**/
 			preChapter() {
+				if (!this.preChapterLoaded) {
+					this.turnChapter = true;
+					uni.showLoading({
+						mask: true,
+						title: '正在加载中请稍候'
+					})
+					return
+				}
 				this.preTranslateX = -this.windowWidth - 20;
 				this.chapterId--;
 				this.nextText = this.text;
@@ -650,7 +744,6 @@
 				this.nextChapterName = this.chapterName;
 				this.chapterName = this.preChapterName;
 				this.preChapterName = '';
-				this.wait = false;
 				
 				this.currentPage = this.pages.length - 1;
 				this.goToPage(this.currentPage)
@@ -664,9 +757,13 @@
 					page = this.pages.length - 1;
 				}
 				this.showAnimation = false;
+				this.currentPage = page
 				this.pages.forEach((value, index) => {
 					if (index < page) {
 						value.translateX = -this.windowWidth - 20
+					}
+					else {
+						value.translateX = 0
 					}
 				})
 			},
@@ -750,10 +847,10 @@
 				uni.showLoading({mask: true})
 				return new Promise((resolve, reject) => {
 					// 模拟网络时间
-					this.nextPageLoaded = true;
-					this.prePageLoaded = true;
 					setTimeout(() => {
 						uni.hideLoading()
+						this.nextChapterLoaded = true;
+						this.prechapterLoaded = true;
 						this.chapterId = 2;
 						this.chapterName = `第${this.chapterId}章 测试测试`;
 						this.preChapterName = `第${this.chapterId - 1}章 测试测试`;
@@ -761,6 +858,13 @@
 						this.text = this.chapterId + this.textFixed;
 						this.preText = this.chapterId - 1 + this.textFixed;
 						this.nextText = this.chapterId + 1 + this.textFixed;
+						// 生成目录，正常是后端传过来
+						for (let i=1;i<=100;i++) {
+							this.directoryList.push({
+								chapterId: i,
+								name: `第${i}章 测试测试`
+							})
+						}
 						resolve()
 					}, 1000)
 				})
@@ -772,16 +876,18 @@
 			**/
 			getText(chapterId, type) {
 				if (type === 'next') {
-					this.nextPageLoaded = false;
+					this.nextChapterLoaded = false;
 				}
 				else {
-					this.prePageLoaded = false;
+					this.prechapterLoaded = false;
 				}
 				// 模拟网络时间
 				setTimeout(() => {
-					uni.hideLoading()
+					if (this.turnChapter) {
+						uni.hideLoading()
+					}
 					if (type === 'next') {
-						this.nextPageLoaded = true;
+						this.nextChapterLoaded = true;
 						this.nextText = chapterId + this.textFixed;
 						this.nextChapterName = `第${chapterId}章 测试测试`;
 						this.$nextTick(() => {
@@ -789,7 +895,7 @@
 						})
 					}
 					else {
-						this.prePageLoaded = true;
+						this.prechapterLoaded = true;
 						if (chapterId === 0) {
 							this.preText = '';
 							this.preChapterName = '';
@@ -803,7 +909,35 @@
 						}
 					}
 					
-				}, 500)
+				}, 1000)
+			},
+			
+			/**
+			* 跳转到指定章节
+			**/
+			goToChapter(chapterId) {
+				this.closeMenu()
+				uni.showLoading({mask: true})
+				return new Promise((resolve, reject) => {
+					// 模拟网络时间
+					
+					setTimeout(() => {
+						uni.hideLoading()
+						this.nextChapterLoaded = true;
+						this.prechapterLoaded = true;
+						this.chapterId = chapterId;
+						this.chapterName = `第${this.chapterId}章 测试测试`;
+						this.preChapterName = `第${this.chapterId - 1}章 测试测试`;
+						this.nextChapterName = `第${this.chapterId + 1}章 测试测试`;
+						this.text = this.chapterId + this.textFixed;
+						this.preText = this.chapterId - 1 + this.textFixed;
+						this.nextText = this.chapterId + 1 + this.textFixed;
+						this.$nextTick(() => {
+							this.calcPages(1, 0)
+						})
+						resolve()
+					}, 1000)
+				})
 			}
 			
 			
@@ -811,7 +945,7 @@
 	}
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 	page{
 		position: relative;
 		width: 100%;
@@ -831,7 +965,7 @@
 		height: 100%;
 		display: flex;
 		justify-content: center;
-		z-index: 201;
+		z-index: 301;
 		.item{
 			flex: 1;
 			height: 100%;
@@ -845,7 +979,6 @@
 		flex-direction: column;
 		justify-content: space-between;
 		padding: 0px 20px;
-		box-sizing: border-box;
 		height: 100%;
 		width: 100%;
 		background-color: #fff;
@@ -878,87 +1011,159 @@
 	.container1{
 		background-color: #000;
 	}
-	.top{
+	.menu{
 		position: fixed;
+		top: 0;
 		left: 0;
-		width: 100%;
-		background-color: #666;
-		z-index: 400;
-		transition: top .3s;
-		.head{
-			position: relative;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			height: 30px;
+		z-index: 302;
+		transition: all .3s;
+		.menu-top{
+			position: absolute;
+			left: 0;
 			width: 100%;
-			line-height: 30px;
-			color: #fff;
+			background-color: #333;
+			transition: top .3s;
+			.head{
+				position: relative;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				height: 40px;
+				width: 100%;
+				line-height: 40px;
+				color: #fff;
+			}
+			.back{
+				position: absolute;
+				top: 0;
+				left: 10px;
+			}
 		}
-		.back{
+		.directory{
 			position: absolute;
 			top: 0;
-			left: 10px;
-		}
-	}
-	.bottom-holder{
-		height: 300px;
-	}
-	.bottom{
-		position: fixed;
-		left: 0;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-around;
-		padding: 10px 20px;
-		height: 300px;
-		width: 100%;
-		background-color: #666;
-		box-sizing: border-box;
-		z-index: 400;
-		transition: bottom .3s;
-		.item{
 			display: flex;
-			align-items: center;
-			.item-name{
-				padding: 10px;
-				color: #000;
-				font-size: 15px;
+			flex-flow: column;
+			width: 600rpx;
+			height: 100%;
+			transition: left .3s;
+			.bookname{
+				padding: 20px 0 20px 10px;
+				width: 100%;
+				font-size: 18px;
 			}
-			.icon{
-				margin-right: 10px;
-				padding: 5px 20px;
-				box-sizing: content-box;
-				font-size: 16px;
-				height: 20px;
-				line-height: 20px;
-				width: auto;
-				text-align: center;
-				border-radius: 20px;
-				border: #fff solid 1px;
-			}
-			.type-setting{
-				display: flex;
-				flex-direction: column;
-				justify-content: space-around;
-				align-items: center;
-				margin-right: 10px;
-				padding: 5px;
-				box-sizing: content-box;
-				height: 20px;
-				width: 20px;
-				border-radius: 5px;
-				border: #fff solid 1px;
-				.line{
-					width: 100%;
-					border-bottom: #fff solid 1px; 
+			.directory-list{
+				flex:1;
+				min-height: 200px;
+				.directory-listItem{
+					display: flex;
+					align-items: center;
+					padding-left: 10px;
+					min-height: 40px;
+					font-size: 14px;
+					border-bottom: #eee solid 1px;
 				}
 				.active{
-					border-bottom: #FF9900 solid 1px;
+					color: red
 				}
 			}
-			.active{
-				border: #FF9900 solid 2px;
+		}
+		.menu-bottom{
+			position: absolute;
+			left: 0;
+			width: 100%;
+			background-color: #333;
+			transition: bottom .3s;
+			color: #fff;
+			.show-page{
+				position: absolute;
+				left: 50%;
+				top: 0;
+				transform: translate(-50%, -110%);
+				padding: 5px 10px;
+				height: 30px;
+				line-height: 20px;
+				border-radius: 10rpx;
+				font-size: 13px;
+				background-color: #333;
+			}
+			.progress-box{
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 0 20px;
+				height: 50px;
+				width: 100%;
+				font-size: 15px;
+			}
+			.items-box{
+				display: flex;
+				justify-content: space-around;
+				align-items: center;
+				height: 80px;
+				width: 100%;
+				.item-box{
+					display: flex;
+					flex-flow: column;
+					justify-content: center;
+					align-items: center;
+					height: 100%;
+				}
+			}
+		}
+		.setting{
+			position: absolute;
+			left: 0;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-around;
+			padding: 10px 20px;
+			width: 100%;
+			color: #fff;
+			background-color: #333;
+			transition: bottom .3s;
+			.item{
+				display: flex;
+				align-items: center;
+				height: 70px;
+				.item-name{
+					padding: 10px;
+					color: #fff;
+					font-size: 14px;
+				}
+				.icon{
+					margin-right: 10px;
+					padding: 5px 20px;
+					font-size: 16px;
+					height: 32px;
+					line-height: 20px;
+					width: auto;
+					text-align: center;
+					border-radius: 20px;
+					border: #fff solid 1px;
+				}
+				.type-setting{
+					display: flex;
+					flex-direction: column;
+					justify-content: space-around;
+					align-items: center;
+					margin-right: 10px;
+					padding: 5px;
+					height: 30px;
+					width: 30px;
+					border-radius: 5px;
+					border: #fff solid 1px;
+					.line{
+						width: 100%;
+						border-bottom: #fff solid 1px; 
+					}
+					.active{
+						border-bottom: #FF9900 solid 1px;
+					}
+				}
+				.active{
+					border: #FF9900 solid 2px;
+				}
 			}
 		}
 	}
