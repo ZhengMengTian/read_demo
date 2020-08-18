@@ -176,7 +176,7 @@
 			<view class="menu-bottom" :style="{bottom: itemShow ? 0 : '-100%'}" @touchend.stop>
 				<view class="show-page">{{currentPage + 1 }}/{{pages.length}}</view>
 				<view class="progress-box">
-					<text @click="preChapter">上一章</text>
+					<text @click="preChapter(0)">上一章</text>
 					<view style="flex: 1;height: 100%;padding: 0 10px;">
 						<my-progress :total="pages.length - 1 || 1" :index="currentPage" @indexChange="goToPage"></my-progress>
 					</view>
@@ -241,9 +241,11 @@
 					</view>
 				</scroll-view>
 			</view>
-			
 		</view>
 		
+		<!-- 遮罩层 用于防止章节轮换时操作 -->
+		<view :style="{height:`${windowHeight}px`, width: `${windowWidth}px`,
+				 zIndex: 1000, position: 'relative'}" v-if="showMask"></view>
 	</view>
 </template>
 
@@ -304,6 +306,8 @@
 				nextChapterLoaded: false,   //下一章是否加载完毕
 				preChapterLoaded: false,   //上一章是否加载完毕
 				waitForTurnChapter: false,   //加载章节后是否跳转页面
+				
+				showMask: false,  //  遮罩层 用于防止章节轮换时操作
 			}
 		},
 		onLoad() {
@@ -436,7 +440,7 @@
 					if (this.waitForTurnChapter) {
 						uni.hideLoading()
 						this.waitForTurnChapter = false;
-						this.preChapter()
+						this.preChapter(0)
 					}
 				}).exec();
 			},
@@ -694,10 +698,13 @@
 							icon: 'none'
 						})
 						this.preTranslateX = 0;
+						this.showMask = true
 						// 动画结束后获取上一章,重置页面
 						setTimeout(() => {
+							this.showMask = false
 							this.preChapter()
 						}, this.turnPageTime*1000)
+						
 					}
 				}
 				else{
@@ -727,8 +734,11 @@
 							icon: 'none'
 						})
 						this.pages[this.currentPage].translateX = -this.windowWidth - 20;
+						this.showMask = true
 						// 动画结束后获取下一章,重置页面
+						
 						setTimeout(() => {
+							this.showMask = false
 							this.nextChapter()
 						}, this.turnPageTime*1000)
 					}
@@ -749,6 +759,13 @@
 					uni.showLoading({
 						mask: true,
 						title: '正在加载中请稍候'
+					})
+					return
+				}
+				if ( this.nextText.length === 0) {
+					uni.showToast({
+						title: '这是最后一章',
+						icon: 'none'
 					})
 					return
 				}
@@ -774,12 +791,19 @@
 			/**
 			* 获取上一章,重置页面，将本章变为后一章，将上一章变为本章，获取上一章内容
 			**/
-			preChapter() {
+			preChapter(page) {
 				if (!this.preChapterLoaded) {
 					this.waitForTurnChapter = true;
 					uni.showLoading({
 						mask: true,
 						title: '正在加载中请稍候'
+					})
+					return
+				}
+				if ( this.preText.length === 0) {
+					uni.showToast({
+						title: '这是第一章',
+						icon: 'none'
 					})
 					return
 				}
@@ -798,10 +822,15 @@
 				this.nextChapterName = this.chapterName;
 				this.chapterName = this.preChapterName;
 				this.preChapterName = '';
-				
-				this.currentPage = this.pages.length - 1;
+				if (page === undefined) {
+					this.currentPage = this.pages.length - 1;
+				}
+				else {
+					this.currentPage = page;
+				}
 				this.goToPage(this.currentPage)
 			},
+			
 			
 			/**
 			* 根据页码跳转
