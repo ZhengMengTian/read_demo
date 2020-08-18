@@ -184,6 +184,8 @@
 					<view class="item-name">字号</view>
 					<view class="icon" @click="bigSize">A+</view>
 					<view class="icon" @click="smallSize">A-</view>
+					<view class="icon" @click="changeFont(false)" v-if="simplified">繁體</view>
+					<view class="icon" @click="changeFont(true)" v-else style="border: #FF9900 solid 1px;color: #FF9900">繁體</view>
 				</view>
 				<view class="item">
 					<view class="item-name">排版</view>
@@ -223,7 +225,7 @@
 
 <script>
 	import myProgress from '../../components/myProgress.vue'
-	import {traditionalized} from '../../utils/utils.js'
+	import { traditionalized, simplized } from '../../utils/utils.js'
 	export default {
 		components:{
 			myProgress
@@ -266,13 +268,14 @@
 				turnPageTime: 0.5,  //翻页动画时间
 				
 				fontSize: '',
+				simplified: '',
 				lineHeight: '',
 				background: '',
 				colorList: ['#000', '#666'],
 				
 				nextChapterLoaded: false,   //下一章是否加载完毕
-				prechapterLoaded: false,   //上一章是否加载完毕
-				turnChapter: false,   //加载章节后是否跳转页面
+				preChapterLoaded: false,   //上一章是否加载完毕
+				waitForTurnChapter: false,   //加载章节后是否跳转页面
 			}
 		},
 		onLoad() {
@@ -341,8 +344,10 @@
 				
 				// 获取字体、排版等信息
 				this.fontSize = uni.getStorageSync('fontSize') || 16;
+				this.simplified = uni.getStorageSync('simplified');
 				this.lineHeight = uni.getStorageSync('lineHeight') || 1.5;
 				this.background = uni.getStorageSync('background') || 0;
+				
 			},
 			
 			/**
@@ -383,8 +388,10 @@
 					let width = data.width;
 					let height = data.height;
 					this.prePages = this.genPages(width, height)
-					if (this.turnChapter) {
-						this.turnChapter = false;
+					this.preChapterLoaded = true;
+					if (this.waitForTurnChapter) {
+						uni.hideLoading()
+						this.waitForTurnChapter = false;
 						this.preChapter()
 					}
 				}).exec();
@@ -399,8 +406,10 @@
 					let width = data.width;
 					let height = data.height;
 					this.nextPages = this.genPages(width, height)
-					if (this.turnChapter) {
-						this.turnChapter = false;
+					this.nextChapterLoaded = true;
+					if (this.waitForTurnChapter) {
+						uni.hideLoading()
+						this.waitForTurnChapter = false;
 						this.nextChapter()
 					}
 				}).exec();
@@ -517,7 +526,7 @@
 					if (deltaX < 0) {
 						if (this.currentPage === this.pages.length - 1) {  //如果翻至最后一页
 							if (!this.nextChapterLoaded) {
-								this.turnChapter = true;
+								this.waitForTurnChapter = true;
 								uni.showLoading({
 									mask: true,
 									title: '正在加载中请稍候'
@@ -540,8 +549,8 @@
 					}
 					else {
 						if (this.currentPage === 0) {  //如果是第一页
-							if (!this.prechapterLoaded) {
-								this.turnChapter = true;
+							if (!this.preChapterLoaded) {
+								this.waitForTurnChapter = true;
 								uni.showLoading({
 									mask: true,
 									title: '正在加载中请稍候'
@@ -625,7 +634,7 @@
 			**/
 			prePage() {
 				if (this.currentPage === 0) {
-					if (!this.prechapterLoaded) {
+					if (!this.preChapterLoaded) {
 						this.preChapter()
 						return
 					}
@@ -692,7 +701,7 @@
 			**/
 			nextChapter() {
 				if (!this.nextChapterLoaded) {
-					this.turnChapter = true;
+					this.waitForTurnChapter = true;
 					uni.showLoading({
 						mask: true,
 						title: '正在加载中请稍候'
@@ -723,7 +732,7 @@
 			**/
 			preChapter() {
 				if (!this.preChapterLoaded) {
-					this.turnChapter = true;
+					this.waitForTurnChapter = true;
 					uni.showLoading({
 						mask: true,
 						title: '正在加载中请稍候'
@@ -812,6 +821,27 @@
 			},
 			
 			/**
+			* 切换繁体简体
+			**/
+			changeFont(type) {
+				if (!type) {   //切换为繁体
+					this.text = traditionalized(this.text)
+					this.preText = traditionalized(this.preText)
+					this.nextText = traditionalized(this.nextText)
+					this.simplified = false
+					uni.setStorageSync('simplified', false)
+				}
+				else {   //切换为简体
+					this.text = simplized(this.text)
+					this.preText = simplized(this.preText)
+					this.nextText = simplized(this.nextText)
+					this.simplified = true
+					uni.setStorageSync('simplified', true)
+				}
+			},
+			
+			
+			/**
 			* 改变行距
 			**/
 			changeLineHeight(lineHeight) {
@@ -851,7 +881,7 @@
 					setTimeout(() => {
 						uni.hideLoading()
 						this.nextChapterLoaded = true;
-						this.prechapterLoaded = true;
+						this.preChapterLoaded = true;
 						this.chapterId = 2;
 						this.chapterName = `第${this.chapterId}章 测试测试`;
 						this.preChapterName = `第${this.chapterId - 1}章 测试测试`;
@@ -859,6 +889,12 @@
 						this.text = this.chapterId + this.textFixed;
 						this.preText = this.chapterId - 1 + this.textFixed;
 						this.nextText = this.chapterId + 1 + this.textFixed;
+						if (!this.simplified) {   //切换为繁体
+							this.text = traditionalized(this.text)
+							this.preText = traditionalized(this.preText)
+							this.nextText = traditionalized(this.nextText)
+						}
+						
 						// 生成目录，正常是后端传过来
 						for (let i=1;i<=100;i++) {
 							this.directoryList.push({
@@ -880,23 +916,22 @@
 					this.nextChapterLoaded = false;
 				}
 				else {
-					this.prechapterLoaded = false;
+					this.preChapterLoaded = false;
 				}
 				// 模拟网络时间
 				setTimeout(() => {
-					if (this.turnChapter) {
-						uni.hideLoading()
-					}
 					if (type === 'next') {
-						this.nextChapterLoaded = true;
+						
 						this.nextText = chapterId + this.textFixed;
 						this.nextChapterName = `第${chapterId}章 测试测试`;
+						if (!this.simplified) {   //切换为繁体
+							this.nextText = traditionalized(this.nextText)
+						}
 						this.$nextTick(() => {
 							this.calcNextPages()
 						})
 					}
 					else {
-						this.prechapterLoaded = true;
 						if (chapterId === 0) {
 							this.preText = '';
 							this.preChapterName = '';
@@ -904,6 +939,9 @@
 						else {
 							this.preText = chapterId + this.textFixed;
 							this.preChapterName = `第${chapterId}章 测试测试`;
+							if (!this.simplified) {   //切换为繁体
+								this.preText = traditionalized(this.preText)
+							}
 							this.$nextTick(() => {
 								this.calcPrePages()
 							})
@@ -925,7 +963,7 @@
 					setTimeout(() => {
 						uni.hideLoading()
 						this.nextChapterLoaded = true;
-						this.prechapterLoaded = true;
+						this.preChapterLoaded = true;
 						this.chapterId = chapterId;
 						this.chapterName = `第${this.chapterId}章 测试测试`;
 						this.preChapterName = `第${this.chapterId - 1}章 测试测试`;
@@ -933,6 +971,11 @@
 						this.text = this.chapterId + this.textFixed;
 						this.preText = this.chapterId - 1 + this.textFixed;
 						this.nextText = this.chapterId + 1 + this.textFixed;
+						if (!this.simplified) {   //切换为繁体
+							this.text = traditionalized(this.text)
+							this.preText = traditionalized(this.preText)
+							this.nextText = traditionalized(this.nextText)
+						}
 						this.$nextTick(() => {
 							this.calcPages(1, 0)
 						})

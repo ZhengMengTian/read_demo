@@ -20,7 +20,7 @@ export function traditionalized(cc){
     }
     return str;
 }
-function simplized(cc){
+export function simplized(cc){
     var str='';
     for(var i=0;i<cc.length;i++){
         if(ftPYStr().indexOf(cc.charAt(i))!=-1)
