@@ -64,7 +64,7 @@
 		<!-- 阅读页 -->
 		
 		<!-- 上一章 -->
-		<view class="container" :class="{container0: background === 0, container1: background === 1}"
+		<view class="container" :class="{container0: background === 1, container1: background === 2}"
 			:style="{zIndex: 300, transform: `translateX(${preTranslateX}px)`, transition: `all ${showAnimation?turnPageTime:0}s`}"
 		>
 			<view class="chapter">
@@ -72,7 +72,7 @@
 			</view>
 			<view class="content"
 				:style="{height:`${contentHeight}px`, width: `${contentWidth}px`,
-				fontSize: `${fontSize}px`,color: `${colorList[background]}`,
+				fontSize: `${fontSize}px`,color: `${colorList[background - 1]}`,
 				transform: `translateX(-${(prePages.length-1)*(contentWidth+columnGap)}px)`,
 				columns: `${contentWidth}px`, columnGap:`${columnGap}px`}"
 			>
@@ -87,7 +87,7 @@
 		</view>
 		
 		<!-- 本章 -->
-		<view class="container" :class="{container0: background === 0, container1: background === 1}"
+		<view class="container" :class="{container0: background === 1, container1: background === 2}"
 			v-for="item of pages" :key="item.id" 
 			:style="{zIndex: item.zIndex, transform: `translateX(${item.translateX}px)`, transition: `all ${showAnimation?turnPageTime:0}s`}"
 		>
@@ -97,7 +97,7 @@
 			</view>
 			<view class="content"
 				:style="{height:`${contentHeight}px`, width: `${contentWidth}px`,
-				fontSize: `${fontSize}px`,color: `${colorList[background]}`,
+				fontSize: `${fontSize}px`,color: `${colorList[background - 1]}`,
 				transform: `translateX(-${item.id*(contentWidth+columnGap)}px)`,
 				columns: `${contentWidth}px`, columnGap:`${columnGap}px`}"
 			>
@@ -112,7 +112,7 @@
 		</view>
 		
 		<!-- 下一章 -->
-		<view class="container" :class="{container0: background === 0, container1: background === 1}"
+		<view class="container" :class="{container0: background === 1, container1: background === 2}"
 			:style="{zIndex: 100, transform: `translateX(0px)`}"
 			v-if="pages.length"
 		>
@@ -121,7 +121,7 @@
 			</view>
 			<view class="content"
 				:style="{height:`${contentHeight}px`, width: `${contentWidth}px`,
-				fontSize: `${fontSize}px`,color: `${colorList[background]}`,
+				fontSize: `${fontSize}px`,color: `${colorList[background - 1]}`,
 				transform: `translateX(0px)`,
 				columns: `${contentWidth}px`, columnGap:`${columnGap}px`}"
 			>
@@ -163,11 +163,11 @@
 						<text class="iconfont" style="font-size: 25px;">&#xe601;</text>
 						<text style="font-size: 13px;">目录</text>
 					</view>
-					<view class="item-box" v-if="background === 1" @click="changeBackground(0)">
+					<view class="item-box" v-if="background === 2" @click="changeBackground(1)">
 						<text class="iconfont" style="font-size: 25px;">&#xe63e;</text>
 						<text style="font-size: 13px;">夜间</text>
 					</view>
-					<view class="item-box" v-else @click="changeBackground(1)">
+					<view class="item-box" v-if="background === 1" @click="changeBackground(2)">
 						<text class="iconfont" style="font-size: 25px;">&#xe64c;</text>
 						<text style="font-size: 13px;">日间</text>
 					</view>
@@ -201,14 +201,14 @@
 				</view>
 				<view class="item">
 					<view class="item-name">背景</view>
-					<view class="icon" style="background: url(../../static/background1.jpg);" :class="{active: background === 0}" @click="changeBackground(0)"></view>
-					<view class="icon" style="background-color: #000;" :class="{active: background === 1}" @click="changeBackground(1)"></view>
+					<view class="icon" style="background: url(../../static/background1.jpg);" :class="{active: background === 1}" @click="changeBackground(1)"></view>
+					<view class="icon" style="background-color: #000;" :class="{active: background === 2}" @click="changeBackground(2)"></view>
 				</view>
 			</view>
 			
 			<!-- 目录层 -->
-			<view class="directory" :class="{container0: background === 0, container1: background === 1}"
-			 :style="{left: directoryShow ? 0 : '-100%',color: `${colorList[background]}`}"  @touchend.stop>
+			<view class="directory" :class="{container0: background === 1, container1: background === 2}"
+			 :style="{left: directoryShow ? 0 : '-100%',color: `${colorList[background - 1]}`}"  @touchend.stop>
 				<view class="bookname">书名</view>
 				<scroll-view scroll-y="true" class="directory-list" :scroll-into-view="`chapter${chapterId}`">
 					<view v-for="item of directoryList" :key="item.chapterId" class="directory-listItem" :class="{active: item.chapterId === chapterId}"
@@ -310,7 +310,6 @@
 				this.contentWidth = windowWidth - 40;
 				this.contentHeight = windowHeight - 60;
 				this.platform = platform;
-				
 				// #ifdef APP-PLUS
 					plus.navigator.setFullscreen(true);
 					// 获取安卓电量
@@ -346,7 +345,7 @@
 				this.fontSize = uni.getStorageSync('fontSize') || 16;
 				this.simplified = uni.getStorageSync('simplified');
 				this.lineHeight = uni.getStorageSync('lineHeight') || 1.5;
-				this.background = uni.getStorageSync('background') || 0;
+				this.background = uni.getStorageSync('background') || 1;
 				
 			},
 			

@@ -30,7 +30,7 @@
 	    -webkit-text-stroke-width: 0.2px;
 	    -moz-osx-font-smoothing: grayscale;
 	}
-	*{
+	*,view{
 		box-sizing: border-box;
 	}
 	
