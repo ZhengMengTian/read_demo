@@ -82,7 +82,15 @@
 				</view>
 			</view>
 			<view class="bottom-bar">
-				{{prePages.length}}/{{prePages.length}}
+				<view>
+					{{systemTimeStr}}
+				</view>
+				<view>
+					{{prePages.length}}/{{prePages.length}}
+				</view>
+				<view>
+					<battery :level="batteryLevel" :charging="batteryState === 2"></battery>
+				</view>
 			</view>
 		</view>
 		
@@ -107,7 +115,15 @@
 				</view>
 			</view>
 			<view class="bottom-bar">
-				{{item.id + 1 }}/{{pages.length}}
+				<view>
+					{{systemTimeStr}}
+				</view>
+				<view>
+					{{item.id + 1 }}/{{pages.length}}
+				</view>
+				<view>
+					<battery :level="batteryLevel" :charging="batteryState === 2"></battery>
+				</view>
 			</view>
 		</view>
 		
@@ -131,7 +147,15 @@
 				</view>
 			</view>
 			<view class="bottom-bar">
-				1/{{nextPages.length}}
+				<view>
+					{{systemTimeStr}}
+				</view>
+				<view>
+					1/{{pages.length}}
+				</view>
+				<view>
+					<battery :level="batteryLevel" :charging="batteryState === 2"></battery>
+				</view>
 			</view>
 		</view>
 		
@@ -225,10 +249,12 @@
 
 <script>
 	import myProgress from '../../components/myProgress.vue'
-	import { traditionalized, simplized } from '../../utils/utils.js'
+	import battery from '../../components/battery.vue'
+	import { traditionalized, simplized, dateToStr } from '../../utils/utils.js'
 	export default {
 		components:{
-			myProgress
+			myProgress,
+			battery
 		},
 		data() {
 			return {
@@ -253,7 +279,9 @@
 				windowHeight: 0,
 				platform: '',  //设备
 				batteryState: '', //电池状态
-				batteryLevel: '', //电量
+				batteryLevel: 100, //电量
+				systemTime: '',   //系统时间
+				systemTimeStr: '',   //系统时间字符串
 				statusBarHeight: 0, //状态栏高度
 				
 				columnGap: 40,
@@ -311,18 +339,26 @@
 				this.contentHeight = windowHeight - 60;
 				this.platform = platform;
 				// #ifdef APP-PLUS
+					// 全屏
 					plus.navigator.setFullscreen(true);
-					// 获取安卓电量
+					// 取消左滑返回
+					let page = this.$mp.page.$getAppWebview();
+					page.setStyle({ popGesture: 'none' });
+					// 获取ios电量
 					if (this.platform === 'ios') {
 						let UIDevice = plus.ios.import("UIDevice");  
 						let dev = UIDevice.currentDevice();  
 						if (!dev.isBatteryMonitoringEnabled()) {  
 						    dev.setBatteryMonitoringEnabled(true);  
-						}  
-						this.batteryState = dev.batteryState();
-						this.batteryLevel = dev.batteryLevel();
+						}
+						setInterval(() => {
+							this.batteryState = dev.batteryState();
+							this.batteryLevel = dev.batteryLevel() * 100;
+						}, 1000)
+						
 					}
 					else {
+						// 获取安卓电量
 						let main = plus.android.runtimeMainActivity();
 						let Intent = plus.android.importClass('android.content.Intent');  
 						let recevier = plus.android.implements('io.dcloud.feature.internal.reflect.BroadcastReceiver', {  
@@ -340,6 +376,15 @@
 					}
 					
 				// #endif
+				
+				// 设置时间
+				let date = new Date()
+				this.systemTime = Date.parse(date)
+				this.systemTimeStr = dateToStr(this.systemTime)
+				setInterval(() => {
+					this.systemTime += 60000
+					this.systemTimeStr = dateToStr(this.systemTime)
+				}, 60000)
 				
 				// 获取字体、排版等信息
 				this.fontSize = uni.getStorageSync('fontSize') || 16;
@@ -934,6 +979,9 @@
 						if (chapterId === 0) {
 							this.preText = '';
 							this.preChapterName = '';
+							this.$nextTick(() => {
+								this.calcPrePages()
+							})
 						}
 						else {
 							this.preText = chapterId + this.textFixed;
@@ -1034,10 +1082,12 @@
 			line-height: 30px;
 		}
 		.bottom-bar{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
 			font-size: 14px;
 			color: $minor-text-color;
 			height:30px;
-			line-height: 30px;
 		}
 		.content{
 			.book-inner{
