@@ -74,7 +74,7 @@
 			<view class="content"
 				:style="{height:`${contentHeight}px`, width: `${contentWidth}px`,
 				fontSize: `${fontSize}px`,color: `${colorList[background - 1]}`,
-				transform: `translateX(-${(0)*(contentWidth+columnGap)}px)`,
+				transform: `translateX(-${(currentPage-1)*(contentWidth+columnGap)}px)`,
 				columns: `${contentWidth}px`, columnGap:`${columnGap}px`}"
 			>
 				<view class="book-inner" v-html="preText"
