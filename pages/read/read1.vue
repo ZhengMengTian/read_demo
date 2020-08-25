@@ -9,7 +9,7 @@
 		<!-- 仅用于计算 -->
 		<view class="container hidden">
 			<view class="chapter">
-				{{chapterName}}
+				章节名
 			</view>
 			<view id="content" class="content"
 				:style="{height:`${contentHeight}px`, width: `${contentWidth}px`,
@@ -27,7 +27,7 @@
 		
 		<view class="container hidden">
 			<view class="chapter">
-				{{chapterName}}
+				章节名
 			</view>
 			<view id="content" class="content"
 				:style="{height:`${contentHeight}px`, width: `${contentWidth}px`,
@@ -45,7 +45,7 @@
 		
 		<view class="container hidden">
 			<view class="chapter">
-				{{chapterName}}
+				章节名
 			</view>
 			<view id="content" class="content"
 				:style="{height:`${contentHeight}px`, width: `${contentWidth}px`,
@@ -63,9 +63,10 @@
 		
 		<!-- 阅读页 -->
 		
-		<!-- 上一章 -->
+		<!-- 上一页 -->
 		<view class="container" :class="{container0: background === 1, container1: background === 2}"
-			:style="{zIndex: 300, transform: `translateX(${preTranslateX}px)`, transition: `all ${showAnimation?turnPageTime:0}s`}"
+			:style="{zIndex: 102, transform: `translateX(${preTranslateX}px)`, transition: `all ${showAnimation?turnPageTime:0}s`,
+			boxShadow:showShadow?'0 0 10px 0 rgba(0,0,0,.4)':''}"
 		>
 			<view class="chapter">
 				{{preChapterName}}
@@ -73,10 +74,10 @@
 			<view class="content"
 				:style="{height:`${contentHeight}px`, width: `${contentWidth}px`,
 				fontSize: `${fontSize}px`,color: `${colorList[background - 1]}`,
-				transform: `translateX(-${(prePages.length-1)*(contentWidth+columnGap)}px)`,
+				transform: `translateX(-${(currentPage-1)*(contentWidth+columnGap)}px)`,
 				columns: `${contentWidth}px`, columnGap:`${columnGap}px`}"
 			>
-				<view class="book-inner" v-html="text"
+				<view class="book-inner" v-html="preText"
 					:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`}"
 				>
 				</view>
@@ -86,7 +87,7 @@
 					{{systemTimeStr}}
 				</view>
 				<view>
-					{{prePages.length}}/{{prePages.length}}
+					这是上一页
 				</view>
 				<view>
 					<battery :level="batteryLevel" :charging="batteryState === 2"></battery>
@@ -94,19 +95,18 @@
 			</view>
 		</view>
 		
-		<!-- 本章 -->
+		<!-- 本页 -->
 		<view class="container" :class="{container0: background === 1, container1: background === 2}"
-			v-for="item of pages" :key="item.id" 
-			:style="{zIndex: item.zIndex, transform: `translateX(${item.translateX}px)`, transition: `all ${showAnimation?turnPageTime:0}s`}"
+			:style="{zIndex: 101, transform: `translateX(${translateX}px)`, transition: `all ${showAnimation?turnPageTime:0}s`,
+			boxShadow:showShadow?'0 0 10px 0 rgba(0,0,0,.4)':''}"
 		>
-		<!-- v-if="item.id - currentPage < 2 && item.id - currentPage > -2" -->
 			<view class="chapter">
 				{{chapterName}}
 			</view>
 			<view class="content"
 				:style="{height:`${contentHeight}px`, width: `${contentWidth}px`,
 				fontSize: `${fontSize}px`,color: `${colorList[background - 1]}`,
-				transform: `translateX(-${item.id*(contentWidth+columnGap)}px)`,
+				transform: `translateX(-${0*(contentWidth+columnGap)}px)`,
 				columns: `${contentWidth}px`, columnGap:`${columnGap}px`}"
 			>
 				<view class="book-inner" v-html="text"
@@ -119,7 +119,7 @@
 					{{systemTimeStr}}
 				</view>
 				<view>
-					{{item.id + 1 }}/{{pages.length}}
+					{{currentPage + 1 }}/{{pageNum + 1}}
 				</view>
 				<view>
 					<battery :level="batteryLevel" :charging="batteryState === 2"></battery>
@@ -127,10 +127,9 @@
 			</view>
 		</view>
 		
-		<!-- 下一章 -->
+		<!-- 下一页 -->
 		<view class="container" :class="{container0: background === 1, container1: background === 2}"
 			:style="{zIndex: 100, transform: `translateX(0px)`}"
-			v-if="pages.length"
 		>
 			<view class="chapter">
 				{{nextChapterName}}
@@ -151,7 +150,7 @@
 					{{systemTimeStr}}
 				</view>
 				<view>
-					1/{{pages.length}}
+					这是下一页
 				</view>
 				<view>
 					<battery :level="batteryLevel" :charging="batteryState === 2"></battery>
@@ -244,8 +243,8 @@
 		</view>
 		
 		<!-- 遮罩层 用于防止章节轮换时操作 -->
-		<view :style="{height:`${windowHeight}px`, width: `${windowWidth}px`,
-				 zIndex: 1000, position: 'relative'}" v-if="showMask"></view>
+		<!-- <view :style="{height:`${windowHeight}px`, width: `${windowWidth}px`,
+				 zIndex: 1000, position: 'relative'}" v-if="showMask"></view> -->
 	</view>
 </template>
 
@@ -269,12 +268,16 @@
 				nextText: '',
 				preText: '',
 				directoryList: [],  //目录列表
-				preTranslateX: 0,  //上一章的位移
+				preTranslateX: 0,  //上一页的位移
+				translateX: 0,   //本页位移
+				currentPage: 0,
+				pageNum:1,  
+				prePageNum:1,
+				nextPageNum:1,
 				
 				showAnimation: false, //是否开启动画
-				pages: [],
-				prePages: [],
-				nextPages: [],
+				showShadow: false, //是否显示页面阴影
+				
 				contentWidth: 0,
 				contentHeight: 0,
 				windowWidth: 0,
@@ -287,10 +290,9 @@
 				statusBarHeight: 0, //状态栏高度
 				
 				columnGap: 40,
-				currentPage: 0,
 				touchStartX: 0,  // 触屏起始点
 				touchStartT: 0,  //触屏起始时间
-				touchTimer: null  ,//用于触摸节流
+				
 				menuShow: false,  //菜单栏box是否渲染
 				itemShow: false,  // 菜单栏动画控制
 				settingShow: false,  //设置栏动画控制
@@ -318,7 +320,7 @@
 		},
 		computed:{
 			progress() {
-				return this.currentPage / (this.pages.length - 1);
+				return this.currentPage / this.pageNum;
 			}
 		},
 		methods: {
@@ -339,7 +341,7 @@
 				this.statusBarHeight = statusBarHeight;
 				this.windowWidth = windowWidth;
 				this.windowHeight = windowHeight;
-				this.contentWidth = windowWidth - 40;
+				this.contentWidth = windowWidth - this.columnGap;
 				this.contentHeight = windowHeight - 60;
 				this.platform = platform;
 				// #ifdef APP-PLUS
@@ -399,10 +401,10 @@
 			},
 			
 			/**
-			* 获取数据初始化页面
+			* 获取数据并计算页面
 			**/
 			async initPage() {
-				this.preTranslateX = -this.windowWidth - 20;
+				this.preTranslateX = -this.windowWidth;
 				await this.getData()
 				this.$nextTick(() => {
 					this.calcPages()
@@ -417,7 +419,7 @@
 				query.select('#text').boundingClientRect(data => {
 					let width = data.width;
 					let height = data.height;
-					this.pages = this.genPages(width, height)
+					this.pageNum = this.calcPageNum(width, height)
 					if (type === 1) {
 						this.currentPage = Math.floor((this.pages.length - 1) * progress)
 						this.goToPage(this.currentPage)
@@ -435,7 +437,7 @@
 				query.select('#preText').boundingClientRect(data => {
 					let width = data.width;
 					let height = data.height;
-					this.prePages = this.genPages(width, height)
+					this.prePageNum = this.calcPageNum(width, height)
 					this.preChapterLoaded = true;
 					if (this.waitForTurnChapter) {
 						uni.hideLoading()
@@ -453,7 +455,7 @@
 				query.select('#nextText').boundingClientRect(data => {
 					let width = data.width;
 					let height = data.height;
-					this.nextPages = this.genPages(width, height)
+					this.nextPageNum = this.calcPageNum(width, height)
 					this.nextChapterLoaded = true;
 					if (this.waitForTurnChapter) {
 						uni.hideLoading()
@@ -465,47 +467,22 @@
 			
 			
 			/**
-			* 生成阅读页pages
+			* 计算页数
 			**/
-			genPages(width, height) {
-				let arr = [];
-				let id = 0;
+			calcPageNum(width, height) {
+				let num = 0;
 				// #ifdef APP-PLUS
 				if (this.platform === 'ios') {
-					while (height > 0) {
-						arr.push({
-							id,
-							zIndex: 200 - id,
-							translateX: 0
-						});
-						id++;
-						height -= this.contentHeight
-					}
+					num = Math.floor(height/this.contentHeight)
 				}
 				else {
-					while (width > 0) {
-						arr.push({
-							id,
-							zIndex: 200 - id,
-							translateX: 0
-						});
-						id++;
-						width -= this.contentWidth + this.columnGap
-					}
+					num = Math.floor(width/(this.contentWidth + this.columnGap))
 				}
 				// #endif
 				// #ifndef APP-PLUS
-				while (width > 0) {
-					arr.push({
-						id,
-						zIndex: 200 - id,
-						translateX: 0
-					});
-					id++;
-					width -= this.contentWidth + this.columnGap
-				}
+				num = Math.floor(width/(this.contentWidth + this.columnGap))
 				// #endif
-				return arr;
+				return num;
 			},
 			
 			/**
@@ -513,8 +490,22 @@
 			**/
 			touchStart(e) {
 				this.showAnimation = false;
+				this.showShadow = true;
 				this.touchStartX = e.touches[0].clientX;
 				this.touchStartT = e.timeStamp;
+			},
+			
+			/**
+			* 触摸
+			**/
+			touchMove(e) {
+				let deltaX = e.touches[0].clientX - this.touchStartX;
+				if (deltaX < 0) {
+					
+				}
+				else {
+					
+				}
 			},
 			
 			/**
@@ -522,108 +513,51 @@
 			**/
 			touchEnd(e) {
 				this.showAnimation = true;
-				let deltaX = e.changedTouches[0].clientX - this.touchStartX;
-				if (deltaX === 0) {  //deltaX === 0为点击
-					if (e.changedTouches[0].clientX<this.windowWidth/3) {
-						this.prePage()
-					}
-					else if (e.changedTouches[0].clientX>this.windowWidth/3*2) {
-						this.nextPage()
-					}
-					else {
-						this.showMenu()
-					}
-				}
-				else {
-					if (deltaX > this.windowWidth/2) {
-						this.prePage()
-					}
-					else if (deltaX < -this.windowWidth/2) {
-						this.nextPage()
-					}
-					else {
-						let v = 0;
-						v = deltaX / (e.timeStamp - this.touchStartT);
-						if (v <= 0.1 && v > 0) {  //翻页速度慢，取消翻页
-							if (this.currentPage !== 0) {
-								this.pages[this.currentPage - 1].translateX = -this.windowWidth - 20;
-							}
-							else {
-								this.preTranslateX = -this.windowWidth - 20;
-							}
-						}
-						else if (v >= -0.1 && v < 0) {  //翻页速度慢，取消翻页
-							this.pages[this.currentPage].translateX = 0;
-						}
-						else if(v > 0.1) {
-							this.prePage()
-						}
-						else if (v < -0.1) {
-							this.nextPage()
-						}
-					}
-				}
+				this.showShadow = false;
+				// let deltaX = e.changedTouches[0].clientX - this.touchStartX;
+				// if (deltaX === 0) {  //deltaX === 0为点击
+				// 	if (e.changedTouches[0].clientX<this.windowWidth/3) {
+				// 		this.prePage()
+				// 	}
+				// 	else if (e.changedTouches[0].clientX>this.windowWidth/3*2) {
+				// 		this.nextPage()
+				// 	}
+				// 	else {
+				// 		this.showMenu()
+				// 	}
+				// }
+				// else {
+				// 	if (deltaX > this.windowWidth/2) {
+				// 		this.prePage()
+				// 	}
+				// 	else if (deltaX < -this.windowWidth/2) {
+				// 		this.nextPage()
+				// 	}
+				// 	else {
+				// 		let v = 0;
+				// 		v = deltaX / (e.timeStamp - this.touchStartT);
+				// 		if (v <= 0.1 && v > 0) {  //翻页速度慢，取消翻页
+				// 			if (this.currentPage !== 0) {
+				// 				this.pages[this.currentPage - 1].translateX = -this.windowWidth - 20;
+				// 			}
+				// 			else {
+				// 				this.preTranslateX = -this.windowWidth - 20;
+				// 			}
+				// 		}
+				// 		else if (v >= -0.1 && v < 0) {  //翻页速度慢，取消翻页
+				// 			this.pages[this.currentPage].translateX = 0;
+				// 		}
+				// 		else if(v > 0.1) {
+				// 			this.prePage()
+				// 		}
+				// 		else if (v < -0.1) {
+				// 			this.nextPage()
+				// 		}
+				// 	}
+				// }
 			},
 			
-			/**
-			* 触摸
-			**/
-			touchMove(e) {
-				if (!this.touchTimer) {
-					let deltaX = e.touches[0].clientX - this.touchStartX;
-					if (deltaX < 0) {
-						if (this.currentPage === this.pages.length - 1) {  //如果翻至最后一页
-							if (!this.nextChapterLoaded) {
-								this.waitForTurnChapter = true;
-								uni.showLoading({
-									mask: true,
-									title: '正在加载中请稍候'
-								})
-								return
-							}
-							if (this.nextText.length === 0) {  //如果没有下一章
-								uni.showToast({
-									title: '这是最后一章',
-									icon: 'none'
-								})
-							}
-							else {
-								this.pages[this.currentPage].translateX = deltaX;
-							}
-						}
-						else {
-							this.pages[this.currentPage].translateX = deltaX;
-						}
-					}
-					else {
-						if (this.currentPage === 0) {  //如果是第一页
-							if (!this.preChapterLoaded) {
-								this.waitForTurnChapter = true;
-								uni.showLoading({
-									mask: true,
-									title: '正在加载中请稍候'
-								})
-								return
-							}
-							if (this.preText.length === 0) {  //如果没有上一章
-								uni.showToast({
-									title: '这是第一章',
-									icon: 'none'
-								})
-							}
-							else {
-								this.preTranslateX = -this.windowWidth + deltaX;
-							}
-						}
-						else {
-							this.pages[this.currentPage - 1].translateX = -this.windowWidth + deltaX;
-						}
-					}
-					this.touchTimer = setTimeout(() => {
-						this.touchTimer = null;
-					}, 100)
-				}
-			},
+			
 			
 			/**
 			* 呼出菜单
@@ -1102,7 +1036,6 @@
 		height: 100%;
 		width: 100%;
 		background-color: #fff;
-		box-shadow: 0 0 10px 0 rgba(0,0,0,.4);
 		overflow: hidden;
 		.chapter{
 			font-size: 14px;
