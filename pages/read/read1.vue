@@ -69,7 +69,10 @@
 			:style="{zIndex: 102, transform: `translateX(${prePage.pageTranslate}px)`, transition: `all ${showAnimation?turnPageTime:0}s`,
 			boxShadow:showShadow?'0 0 10px 0 rgba(0,0,0,.4)':''}"
 		>
-			<view>
+			<view v-if="prePage.isCover">
+				我是封面
+			</view>
+			<view v-else>
 				<view class="chapter">
 					{{prePage.chapterName}}
 				</view>
@@ -104,7 +107,10 @@
 			:style="{zIndex: 101, transform: `translateX(${curPage.pageTranslate}px)`, transition: `all ${showAnimation?turnPageTime:0}s`,
 			boxShadow:showShadow?'0 0 10px 0 rgba(0,0,0,.4)':''}"
 		>
-			<view>
+			<view v-if="curPage.isCover">
+				我是封面
+			</view>
+			<view v-else>
 				<view class="chapter">
 					{{curPage.chapterName}}
 				</view>
@@ -646,12 +652,20 @@
 					this.nextPage = Object.assign({}, this.curPage)
 					this.curPage = Object.assign({}, this.prePage)
 					if (this.currentPage === 0) {
-						this.prePage.ready = this.preChapter.ready
-						this.prePage.chapterName = this.preChapter.chapterName
-						this.prePage.text = this.preChapter.text
-						this.prePage.pageNum = this.preChapter.totalPage - 1
-						this.prePage.totalPage = this.preChapter.totalPage
-						this.prePage.pageTranslate = -this.windowWidth
+						if (this.preChapter.ready && this.preChapter.isCover) {
+							this.prePage.ready = true
+							this.prePage.isCover = true
+							this.prePage.pageTranslate = -this.windowWidth
+						}
+						else {
+							this.prePage.ready = this.preChapter.ready
+							this.prePage.chapterName = this.preChapter.chapterName
+							this.prePage.text = this.preChapter.text
+							this.prePage.pageNum = this.preChapter.totalPage - 1
+							this.prePage.totalPage = this.preChapter.totalPage
+							this.prePage.pageTranslate = -this.windowWidth
+						}
+						
 					}
 					else {
 						this.prePage.ready = true
@@ -663,6 +677,7 @@
 					}
 					this.pageStatus = 0
 				}
+				
 			},
 			
 			/**
@@ -693,17 +708,28 @@
 					}
 				}
 				if (this.pre) {   //首次右滑后
-					this.prePage.pageTranslate = -this.windowWidth+deltaX<-this.windowWidth?-this.windowWidth:-this.windowWidth+deltaX
+					if (this.curPage.isCover) {
+						return
+					}
+					else {
+						this.prePage.pageTranslate = -this.windowWidth+deltaX<-this.windowWidth?-this.windowWidth:-this.windowWidth+deltaX
+					}
 				}
 				else if (!this.next && deltaX > 0) {  //首次右滑
 					this.pre = true
 					if (this.prePage.ready) {  //页面准备好了
 						this.prePage.pageTranslate = -this.windowWidth + deltaX
 					}
-					else {
+					else if(!this.curPage.isCover){
 						this.waitForPre = true   //等待上一页准备完毕后跳转
 						uni.showLoading({
 							title: '正在准备上一章'
+						})
+					}
+					else {  //当前页为封面
+						uni.showToast({
+							title:'已经是第一页了',
+							icon:'none'
 						})
 					}
 					
@@ -824,16 +850,27 @@
 			* 上一页
 			**/
 			goPrePage() {
+				if (this.curPage.isCover) {
+					return 
+				}
 				this.currentPage -= 1
 				this.prePage.pageTranslate = 0
 				
 				if (this.currentPage === -1) {   //翻至上一章了
-					uni.showToast({
-						title: this.preChapter.chapterName,
-						icon: 'none'
-					})
-					this.currentPage = this.preChapter.totalPage - 1
-					this.chapterRotate('pre')
+					if (this.preChapter.isCover) {  //翻至封面了
+						this.nextChapter = Object.assign({}, this.curChapter)
+						this.curChapter = Object.assign({}, this.preChapter)
+						this.preChapter = {}
+						this.currentPage = 0
+					}
+					else {
+						uni.showToast({
+							title: this.preChapter.chapterName,
+							icon: 'none'
+						})
+						this.currentPage = this.preChapter.totalPage - 1
+						this.chapterRotate('pre')
+					}
 				}
 				
 				this.pageStatus = 1
@@ -895,7 +932,7 @@
 						this.calcPreChapter()
 					}
 					else {
-						this.preChapter = {ready: true,isFirst: true}
+						this.preChapter = {ready: true,isCover: true, totalPage: 1}
 					}
 				}
 			},
