@@ -27,7 +27,7 @@
 				left: 0,  //进度条最左侧位置
 				right: 0,  //进度条最右侧位置
 				isTouch: false,  
-				touchTimer: null,  //用于触摸节流
+				// touchTimer: null,  //用于触摸节流
 				percent: 0,
 			}
 		},
@@ -47,24 +47,25 @@
 			
 			touchstart() {
 				this.isTouch = true
+				this.$emit('progressStart')
 			},
 			
 			touchend(e) {
 				this.isTouch = false
 				let index = this.calcIndex(e.changedTouches[0].clientX)
-				this.$emit('indexChange', index)
+				this.$emit('progressEnd', index)
 				this.percent = index / this.total * 100
 			},
 			
 			touchmove(e) {
-				if (!this.touchTimer) {
+				// if (!this.touchTimer) {
 					let index = this.calcIndex(e.touches[0].clientX) 
 					this.$emit('indexChange', index)
 					this.percent = index / this.total * 100
-					this.touchTimer = setTimeout(() => {
-						this.touchTimer = null;
-					}, 100)
-				}
+					// this.touchTimer = setTimeout(() => {
+					// 	this.touchTimer = null;
+					// }, 100)
+				// }
 			},
 			
 			/**
