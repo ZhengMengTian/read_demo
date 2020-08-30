@@ -68,8 +68,13 @@
 			:style="{zIndex: 102, transform: `translateX(${prePage.pageTranslate}px)`, transition: `all ${showAnimation?turnPageTime:0}s`,
 			boxShadow:showShadow?'0 0 10px 0 rgba(0,0,0,.4)':''}"
 		>
-			<view v-if="prePage.isCover">
-				我是封面
+			<view v-if="prePage.isCover" class="cover">
+				<image>
+					
+				</image>
+				<view>
+					我是封面
+				</view>
 			</view>
 			<view v-else>
 				<view class="chapter">
@@ -106,8 +111,13 @@
 			:style="{zIndex: 101, transform: `translateX(${curPage.pageTranslate}px)`, transition: `all ${showAnimation?turnPageTime:0}s`,
 			boxShadow:showShadow?'0 0 10px 0 rgba(0,0,0,.4)':''}"
 		>
-			<view v-if="curPage.isCover">
-				我是封面
+			<view v-if="curPage.isCover" class="cover">
+				<image>
+					
+				</image>
+				<view>
+					我是封面
+				</view>
 			</view>
 			<view v-else>
 				<view class="chapter">
@@ -758,7 +768,13 @@
 				let deltaX = e.changedTouches[0].clientX - this.touchStartX;
 				if (deltaX === 0) {
 					if (e.changedTouches[0].clientX<this.windowWidth/3 && !this.waitForNext && !this.waitForPre) { //点击屏幕左1/3为上一页
-						
+						if (this.curPage.isCover) {
+							uni.showToast({
+								title: '已经是是第一页了',
+								icon: 'none'
+							})
+							return
+						}
 						if (this.prePage.ready) {
 							this.goPrePage()
 						}
@@ -793,6 +809,7 @@
 						this.curPage.pageTranslate = 0
 					}
 					else if (this.pre && this.deltaX >= 0) {  //上一页
+					console.log(11)
 						this.goPrePage()
 					}
 					else if (this.pre && this.deltaX < 0) {  //取消翻页
@@ -1556,5 +1573,17 @@
 			}
 		}
 	}
-	
+	.cover{
+		display: flex;
+		flex-flow: column;
+		justify-content: center;
+		align-items: center;
+		width: 100%;
+		height: 100%;
+		image{
+			height: 400rpx;
+			width: 300rpx;
+			background-color: #eee;
+		}
+	}
 </style>
