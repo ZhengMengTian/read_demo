@@ -809,7 +809,6 @@
 						this.curPage.pageTranslate = 0
 					}
 					else if (this.pre && this.deltaX >= 0) {  //上一页
-					console.log(11)
 						this.goPrePage()
 					}
 					else if (this.pre && this.deltaX < 0) {  //取消翻页
@@ -1005,7 +1004,6 @@
 						this.preChapter = {ready: true,isCover: true, totalPage: 1, chapterName: this.bookName}
 					}
 				}
-				
 				uni.setStorageSync('chapterIndexHistory', this.curChapter.chapterIndex)
 			},
 			
@@ -1279,7 +1277,7 @@
 					// 模拟网络时间
 					setTimeout(() => {
 						// 生成目录，正常是后端传过来
-						for (let i=1;i<=5;i++) {
+						for (let i=1;i<=100;i++) {
 							this.directoryList.push({
 								chapterId: i,
 								name: `第${i}章 测试测试`

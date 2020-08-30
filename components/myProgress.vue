@@ -31,6 +31,11 @@
 				percent: 0,
 			}
 		},
+		watch:{
+			index() {
+				this.percent = this.index / this.total * 100
+			}
+		},
 		mounted() {
 			this.percent = this.index / this.total * 100
 			this.getLocation()
