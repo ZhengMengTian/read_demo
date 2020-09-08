@@ -26,6 +26,9 @@
 			</view>
 		</view>
 		
+		<!-- ************************** -->
+		<!--     根据需要更改（封面）     -->
+		<!-- ************************** -->
 		<!-- 封面 -->
 		<view class="cover container" :class="{container0: background === 1, container1: background === 2}"
 			:style="{zIndex: 201, transform: `translate${cover.pageTranslate[turnType]}`, transition: `all ${showAnimation?turnPageTime:0}s`,
@@ -38,6 +41,10 @@
 				我是封面
 			</view>
 		</view>
+		<!-- ************************** -->
+		<!--****************************-->
+		<!-- ************************** -->
+		
 		
 		<!-- 阅读页 -->
 		<!-- 上一页 -->
@@ -347,6 +354,8 @@
 				
 				windowWidth: 0,   //可用屏幕宽度
 				windowHeight: 0,   //可用屏幕高度
+				contentHeight: 0,  //阅读区域高度
+				
 				platform: '',  //设备
 				batteryState: '', //电池状态
 				batteryLevel: 100, //电量
@@ -409,30 +418,30 @@
 			**/
 			getSystemInfo() {
 				
-				const { windowWidth, windowHeight, statusBarHeight, platform } = uni.getSystemInfoSync();
+				const { windowWidth, windowHeight, statusBarHeight, platform } = uni.getSystemInfoSync()
 				
 				//获取一些必要的设备参数
-				this.statusBarHeight = statusBarHeight;
-				this.windowWidth = windowWidth;
-				this.windowHeight = windowHeight;
-				this.platform = platform;
+				this.statusBarHeight = statusBarHeight
+				this.windowWidth = windowWidth
+				this.windowHeight = windowHeight
+				this.platform = platform
 				// #ifdef APP-PLUS
 					// 全屏
-					plus.navigator.setFullscreen(true);
+					plus.navigator.setFullscreen(true)
 					// 取消ios左滑返回
-					let page = this.$mp.page.$getAppWebview();
-					page.setStyle({ popGesture: 'none' });
+					let page = this.$mp.page.$getAppWebview()
+					page.setStyle({ popGesture: 'none' })
 					
 					if (this.platform === 'ios') {
 						// 获取ios电量
-						let UIDevice = plus.ios.import("UIDevice");  
-						let dev = UIDevice.currentDevice();  
+						let UIDevice = plus.ios.import("UIDevice")
+						let dev = UIDevice.currentDevice()
 						if (!dev.isBatteryMonitoringEnabled()) {  
-						    dev.setBatteryMonitoringEnabled(true);  
+						    dev.setBatteryMonitoringEnabled(true) 
 						}
 						setInterval(() => {
-							this.batteryState = dev.batteryState();
-							this.batteryLevel = dev.batteryLevel() * 100;
+							this.batteryState = dev.batteryState()
+							this.batteryLevel = dev.batteryLevel() * 100
 						}, 1000)
 						
 					}
@@ -457,12 +466,12 @@
 				// #endif
 				
 				// 设置时间
-				let date = new Date()
-				this.systemTime = Date.parse(date)
-				this.systemTimeStr = dateToStr(this.systemTime)
+				let date = new Date();
+				this.systemTime = Date.parse(date);
+				this.systemTimeStr = dateToStr(this.systemTime);
 				setInterval(() => {
-					this.systemTime += 60000
-					this.systemTimeStr = dateToStr(this.systemTime)
+					this.systemTime += 60000;
+					this.systemTimeStr = dateToStr(this.systemTime);
 				}, 60000)
 				
 				// 获取字体、排版等信息
@@ -480,7 +489,7 @@
 				this.chapterIndexHistory = uni.getStorageSync('chapterIndexHistory') || 0;
 				this.progressHistory = uni.getStorageSync('progressHistory') || 0;
 				/*****************************************/
-				/**********    根据需要更改    ************/
+				/*****************************************/
 				/*****************************************/
 				
 			},
@@ -510,19 +519,28 @@
 			* 计算innerHeight，用于截取至整行
 			**/
 			calcHeight() {
-				return new Promise((resolve, reject) => {
-					this.$nextTick(() => {
-						const query = uni.createSelectorQuery().in(this);
-						query.select('#content').boundingClientRect(data => {
-							let height = data.height;
-							let lineHeight = Math.floor(this.fontSize * this.lineHeight)
-							let lineNum = Math.floor((height + (lineHeight - this.fontSize)/2) / lineHeight)
-							this.innerHeight = lineNum * lineHeight
-							resolve()
-						}).exec();
+				if (this.contentHeight) {
+					let lineHeight = Math.floor(this.fontSize * this.lineHeight);
+					let lineNum = Math.floor((this.contentHeight + (lineHeight - this.fontSize)/2) / lineHeight)
+					this.innerHeight = lineNum * lineHeight
+				}
+				else {
+					return new Promise((resolve, reject) => {
+						this.$nextTick(() => {
+							const query = uni.createSelectorQuery().in(this);
+							query.select('#content').boundingClientRect(data => {
+								let height = data.height;
+								this.contentHeight = height;
+								let lineHeight = Math.floor(this.fontSize * this.lineHeight);
+								let lineNum = Math.floor((height + (lineHeight - this.fontSize)/2) / lineHeight)
+								this.innerHeight = lineNum * lineHeight
+								resolve()
+							}).exec();
+						})
+						
 					})
-					
-				})
+				}
+				
 			},
 			
 			/**
@@ -855,10 +873,20 @@
 						this.next = true
 						if (this.nextPage.ready) {  //页面准备好了
 							if (this.nextPage.isEnd) {
+								
+								
+								/*****************************************/
+								/**********    根据需要更改    ************/
+								/*****************************************/
 								uni.showToast({
 									title:'跳转推荐页',
 									icon:'none'
 								})
+								/*****************************************/
+								/*****************************************/
+								/*****************************************/
+								
+								
 							}
 							else {
 								this.prePage.pageTranslate = [
@@ -989,10 +1017,18 @@
 						this.next = true
 						if (this.nextPage.ready) {  //页面准备好了
 							if (this.nextPage.isEnd) {
+								
+								/*****************************************/
+								/**********    根据需要更改    ************/
+								/*****************************************/
 								uni.showToast({
 									title:'跳转推荐页',
 									icon:'none'
 								})
+								/*****************************************/
+								/*****************************************/
+								/*****************************************/
+								
 							}
 							else {
 								this.prePage.pageTranslate = [
@@ -1329,7 +1365,14 @@
 			goNextPage() {
 				
 				if (this.nextPage.isEnd) {   //如果翻至本书末尾
+				
+					/*****************************************/
+					/**********    根据需要更改    ************/
+					/*****************************************/
 					uni.showToast({						title:'跳转推荐页',						icon:'none'					})
+					/*****************************************/
+					/*****************************************/
+					/*****************************************/
 					return 
 				}
 				this.currentPage += 1
@@ -1370,7 +1413,7 @@
 				if (type === 'next') {
 					this.preChapter = Object.assign({}, this.curChapter)
 					this.curChapter = Object.assign({}, this.nextChapter)
-					if (this.curChapter.chapterIndex !== this.directoryList.length - 1) {
+					if (this.curChapter.chapterIndex !== this.directoryList.length - 1) {//最后一章是根据目录列表长度判断
 						this.nextChapter = {
 							ready: false,
 							chapterIndex: this.curChapter.chapterIndex + 1,
@@ -1520,9 +1563,6 @@
 						]
 					}
 				}
-				
-				
-				
 				if (this.currentPage >= this.curChapter.totalPage - 1) {
 					if (this.nextChapter.ready && this.nextChapter.isEnd) {    //翻至最后一章了
 						this.nextPage = {
@@ -1589,10 +1629,10 @@
 			* 加大字体
 			**/
 			async bigSize() {
-				let progress = this.progress
+				let progress = this.progress   //记录阅读进度用于调整字体后跳转
 				this.fontSize++;
 				uni.setStorageSync('fontSize', this.fontSize)
-				await this.calcHeight()
+				this.calcHeight()
 				await this.calcCurChapter()
 				if (this.preChapter.ready && !this.preChapter.isCover) {
 					this.preChapter.ready = false
@@ -1615,7 +1655,7 @@
 				let progress = this.progress
 				this.fontSize--;
 				uni.setStorageSync('fontSize', this.fontSize)
-				await this.calcHeight()
+				this.calcHeight()
 				await this.calcCurChapter()
 				if (this.preChapter.ready && !this.preChapter.isCover) {
 					this.preChapter.ready = false
@@ -1667,7 +1707,7 @@
 				else {
 					this.lineHeight = lineHeight;
 					uni.setStorageSync('lineHeight', this.lineHeight)
-					await this.calcHeight()
+					this.calcHeight()
 					await this.calcCurChapter()
 					if (this.preChapter.ready && !this.preChapter.isCover) {
 						this.preChapter.ready = false
@@ -1713,13 +1753,19 @@
 			* 获取目录
 			**/
 			getDirectoryList() {
+				
+				/*****************************************/
+				/**********    根据需要更改    ************/
+				/*****************************************/
+				
+				
 				return new Promise((resolve, reject) => {
 					// 模拟网络时间
 					setTimeout(() => {
 						// 生成目录，正常是后端传过来
 						for (let i=1;i<=100;i++) {
 							this.directoryList.push({
-								chapterId: i,
+								chapterId: i,   //注意：这个chapterId用于获取章节内容而不是index
 								name: `第${i}章 测试测试测试测试测`
 							})
 						}
@@ -1727,6 +1773,9 @@
 					}, 1000)
 					
 				})
+				/*****************************************/
+				/*****************************************/
+				/*****************************************/
 			},
 			
 			
@@ -1734,19 +1783,26 @@
 			* 获取一章数据
 			**/
 			getOneChapter(chapterId) {
+				
+				/*****************************************/
+				/**********    根据需要更改    ************/
+				/*****************************************/
 				return new Promise((resolve, reject) => {
 					// 模拟网络时间
 					setTimeout(() => {
 						
 						this.tmpChapter.text = `<p>${chapterId}</p>` + this.text  //模拟数据
 						
-						if (!this.simplified) {   //切换为繁体
+						if (!this.simplified) {   //切换为繁体  注意：这里默认数据库中是简体字
 							this.tmpChapter.text = traditionalized(this.tmpChapter.text)
 						}
 						
 						resolve()
 					}, 300)
 				})
+				/*****************************************/
+				/*****************************************/
+				/*****************************************/
 			},
 			
 			
@@ -1770,7 +1826,7 @@
 					}
 				}
 				else {
-					this.preChapter = {ready: true,isCover: true, totalPage: 1, chapterName: this.bookName}
+					this.preChapter = {ready: true,isCover: true}
 				}
 				
 				if (this.curChapter.chapterIndex !== this.directoryList.length - 1) {
