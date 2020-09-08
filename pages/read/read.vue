@@ -1,5 +1,8 @@
 
 <!-- 搜‘根据需要更改’，需要根据实际项目更改的已经列出来了 -->
+<!-- 重要事项：由于阅读页截取整行的需要，请确保文本格式和本插件中的text变量所示一致，即：！！！每一行的高度要一致！！！
+	如果要加内容，例如每一章开头加上章节名:'<h1>章节名</h1>',请确保所加的内容是单行高度的整数倍！！
+ -->
 
 <template>
 	<view style="height: 100%;">
@@ -31,7 +34,7 @@
 		<!-- ************************** -->
 		<!-- 封面 -->
 		<view class="cover container" :class="{container0: background === 1, container1: background === 2}"
-			:style="{zIndex: 201, transform: `translate${cover.pageTranslate[turnType]}`, transition: `all ${showAnimation?turnPageTime:0}s`,
+			:style="{zIndex: 201, transform: `translate${cover.pageTranslate[turnType]}`, transition: `transform ${showAnimation?turnPageTime:0}s`,
 			boxShadow:showShadow&&turnType===0?'0 0 10px 0 rgba(0,0,0,.4)':''}"
 		>
 			<image>
@@ -49,8 +52,8 @@
 		<!-- 阅读页 -->
 		<!-- 上一页 -->
 		<view class="container" :class="{container0: background === 1, container1: background === 2}"
-			:style="{zIndex: 102, transform: `translate${prePage.pageTranslate[turnType]}`, transition: `all ${showAnimation?turnPageTime:0}s`,
-			boxShadow:showShadow&&turnType===0?'0 0 10px 0 rgba(0,0,0,.4)':''}"
+			:style="{zIndex: 102, transform: `translate${prePage.pageTranslate[turnType]}`, transition: `transform ${showAnimation?turnPageTime:0}s`,
+			boxShadow:showShadow?'0 0 10px 0 rgba(0,0,0,.4)':''}"
 		>
 			<!-- 章节名 -->
 			<view class="chapter">
@@ -91,7 +94,7 @@
 		
 		<!-- 本页 -->
 		<view class="container" :class="{container0: background === 1, container1: background === 2}"
-			:style="{zIndex: 101, transform: `translate${curPage.pageTranslate[turnType]}`, transition: `all ${showAnimation?turnPageTime:0}s`,
+			:style="{zIndex: 101, transform: `translate${curPage.pageTranslate[turnType]}`, transition: `transform ${showAnimation?turnPageTime:0}s`,
 			boxShadow:showShadow&&turnType===0?'0 0 10px 0 rgba(0,0,0,.4)':''}"
 		>
 			<!-- 章节名 -->
@@ -129,7 +132,7 @@
 		
 		<!-- 下一页 -->
 		<view class="container" :class="{container0: background === 1, container1: background === 2}"
-			:style="{zIndex: 100, transform: `translate${nextPage.pageTranslate[turnType]}`,transition: `all ${showAnimation?turnPageTime:0}s`,
+			:style="{zIndex: 100, transform: `translate${nextPage.pageTranslate[turnType]}`,transition: `transform ${showAnimation?turnPageTime:0}s`,
 			boxShadow:showShadow&&turnType===0?'0 0 10px 0 rgba(0,0,0,.4)':''}"
 		>
 			<!-- 章节名 -->
@@ -1363,7 +1366,6 @@
 			* 下一页
 			**/
 			goNextPage() {
-				
 				if (this.nextPage.isEnd) {   //如果翻至本书末尾
 				
 					/*****************************************/
@@ -1927,7 +1929,7 @@
 		top: 0;
 		left: 0;
 		z-index: 300;
-		transition: all .3s;
+		// transition: all .3s;
 		.menu-top{
 			position: absolute;
 			left: 0;
@@ -1957,7 +1959,7 @@
 			flex-flow: column;
 			width: 600rpx;
 			height: 100%;
-			transition: left .3s;
+			transition: left .1s;
 			.bookname{
 				padding: 20px 0 20px 10px;
 				width: 100%;
