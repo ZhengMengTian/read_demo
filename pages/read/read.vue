@@ -53,7 +53,7 @@
 		<!-- ************************** -->
 		
 		
-		<!-- 阅读页 -->
+		<!-- 阅读页（结构和样式请和仅用于计算元素一致） -->
 		<!-- 上一页 -->
 		<view class="container" :class="{container0: background === 1, container1: background === 2}"
 			:style="{zIndex: 102, transform: `translate${prePage.pageTranslate[turnType]}`, transition: `transform ${showAnimation?turnPageTime:0}s`,
