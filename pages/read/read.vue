@@ -500,7 +500,8 @@
 			**/
 			async initPage() {
 				uni.showLoading({
-					title: '加载中'
+					title: '加载中',
+					mask: true
 				})
 				this.cover.pageTranslate = [
 					`(${-this.windowWidth}px,0)`,
@@ -509,6 +510,9 @@
 				]
 				await this.calcHeight()
 				await this.getDirectoryList()
+				if (this.chapterIndexHistory > this.directoryList.length - 1) {
+					this.chapterIndexHistory = 0
+				}
 				await this.getThreeChapter(this.chapterIndexHistory)
 				let page = Math.floor((this.curChapter.totalPage - 1) * this.progressHistory)
 				this.goToPage(page)
