@@ -19,9 +19,11 @@
 				章节名
 			</view>
 			<view id="content" class="content">
-				<view class="book-inner" id="bookInner" v-html="calcText"
-					:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`}"
-				>
+				<view class="inner-box" :style="{height: `${innerHeight}px`}">
+					<view class="book-inner" id="bookInner" v-html="calcText"
+						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`}"
+					>
+					</view>
 				</view>
 			</view>
 			<view class="bottom-bar">
@@ -61,14 +63,12 @@
 			</view>
 			
 			<!-- 外层class="content"用于计算阅读部分的高度 -->
-			<view class="content"
-				:style="{fontSize: `${fontSize}px`,color: `${colorList[background - 1]}`}"
-			>
+			<view class="content">
 				<!-- 内层class="inner-box"利用innerHeight将内容截取至整行，防止文字不完整的情况出现 -->
 				<view class="inner-box" :style="{height: `${innerHeight}px`}">
 					<!-- 最里层class="book-inner"的用于获取文本总高度，计算总页数，注意不可以overflow:hidden -->
 					<view class="book-inner" v-html="prePage.text"
-						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`,
+						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`,color: `${colorList[background - 1]}`,
 						transform: `translateY(-${prePage.pageNum*innerHeight}px)`}"
 					>
 					</view>
@@ -101,12 +101,10 @@
 			<view class="chapter">
 				{{curPage.chapterName}}
 			</view>
-			<view class="content"
-				:style="{fontSize: `${fontSize}px`,color: `${colorList[background - 1]}`}"
-			>
+			<view class="content">
 				<view class="inner-box" :style="{height: `${innerHeight}px`}">
 					<view class="book-inner" v-html="curPage.text"
-						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`,
+						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`,color: `${colorList[background - 1]}`,
 						transform: `translateY(-${curPage.pageNum*innerHeight}px)`}"
 					>
 					</view>
@@ -139,12 +137,10 @@
 			<view class="chapter">
 				{{nextPage.chapterName}}
 			</view>
-			<view class="content"
-				:style="{fontSize: `${fontSize}px`,color: `${colorList[background - 1]}`}"
-			>
+			<view class="content">
 				<view class="inner-box" :style="{height: `${innerHeight}px`}">
 					<view class="book-inner" v-html="nextPage.text"
-						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`,
+						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`,color: `${colorList[background - 1]}`,
 						transform: `translateY(-${nextPage.pageNum*innerHeight}px)`}"
 					>
 					</view>
@@ -552,7 +548,8 @@
 			calcCurChapter() {
 				this.calcText = this.curChapter.text
 				return new Promise((resolve, reject) => {
-					this.$nextTick(() => {
+					// 此处setTimeout 100ms是为了确保元素渲染完毕从而获取正确高度，如果遇到页面页数计算不正确的情况可以增加时间试试看
+					setTimeout(() => {
 						const query = uni.createSelectorQuery().in(this);
 						query.select('#bookInner').boundingClientRect(data => {
 							let height = data.height;
@@ -560,7 +557,7 @@
 							this.curChapter.ready = true   //章节准备完毕
 							resolve()
 						}).exec();
-					})
+					}, 100)
 					
 				})
 			},
@@ -571,7 +568,8 @@
 			calcPreChapter() {
 				this.calcText = this.preChapter.text
 				return new Promise((resolve, reject) => {
-					this.$nextTick(() => {
+					// 此处setTimeout 100ms是为了确保元素渲染完毕从而获取正确高度，如果遇到页面页数计算不正确的情况可以增加时间试试看
+					setTimeout(() => {
 						const query = uni.createSelectorQuery().in(this);
 						query.select('#bookInner').boundingClientRect(data => {
 							let height = data.height;
@@ -602,7 +600,7 @@
 							}
 							resolve()
 						}).exec();
-					})
+					},100)
 					
 				})
 				
@@ -614,7 +612,8 @@
 			calcNextChapter() {
 				this.calcText = this.nextChapter.text
 				return new Promise((resolve, reject) => {
-					this.$nextTick(() => {
+					// 此处setTimeout 100ms是为了确保元素渲染完毕从而获取正确高度，如果遇到页面页数计算不正确的情况可以增加时间试试看
+					setTimeout(() => {
 						const query = uni.createSelectorQuery().in(this);
 						query.select('#bookInner').boundingClientRect(data => {
 							let height = data.height;
@@ -647,7 +646,7 @@
 							resolve()
 						}).exec();
 						
-					})
+					},100)
 					
 				})
 				
