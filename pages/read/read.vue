@@ -53,7 +53,7 @@
 		<!-- 上一页 -->
 		<view class="container" :class="{container0: background === 1, container1: background === 2}"
 			:style="{zIndex: 102, transform: `translate${prePage.pageTranslate[turnType]}`, transition: `transform ${showAnimation?turnPageTime:0}s`,
-			boxShadow:showShadow?'0 0 10px 0 rgba(0,0,0,.4)':''}"
+			boxShadow:showShadow&&turnType===0?'0 0 10px 0 rgba(0,0,0,.4)':''}"
 		>
 			<!-- 章节名 -->
 			<view class="chapter">
@@ -674,6 +674,15 @@
 					this.delta = e.touches[0].clientX - this.touchX
 					this.touchX = e.touches[0].clientX;
 					if (this.next) {   //首次左滑后
+					
+						// 限制边界
+						if (deltaX>0) {
+							deltaX = 0
+						}
+						if (deltaX<-this.windowWidth) {
+							deltaX = -this.windowWidth
+						}
+						
 						this.cover.pageTranslate = [
 							`(${deltaX}px,0)`,
 							`(${deltaX}px,0)`,
@@ -714,6 +723,15 @@
 					this.delta = e.touches[0].clientY - this.touchY;
 					this.touchY = e.touches[0].clientY;
 					if (this.next) {   //首次上滑后
+						
+						// 限制边界
+						if (deltaY>0) {
+							deltaY = 0
+						}
+						if (deltaY<-this.windowHeight) {
+							deltaY = -this.windowHeight
+						}
+						
 						this.cover.pageTranslate = [
 							`(0,0)`,
 							`(0,0)`,
@@ -856,6 +874,15 @@
 						if (this.nextPage.isEnd) {
 							return
 						}
+						
+						// 限制边界
+						if (deltaX>0) {
+							deltaX = 0
+						}
+						if (deltaX<-this.windowWidth) {
+							deltaX = -this.windowWidth
+						}
+						
 						this.prePage.pageTranslate = [
 							`(${-this.windowWidth}px,0)`,
 							`(${-this.windowWidth+deltaX}px,0)`,
@@ -917,6 +944,15 @@
 						}
 					}
 					if (this.pre) {   //首次右滑后
+					
+						// 限制边界
+						if (deltaX<0) {
+							deltaX = 0
+						}
+						if (deltaX>this.windowWidth) {
+							deltaX = this.windowWidth
+						}
+						
 						if (this.prePage.isCover) {  //上一页是封面
 							this.cover.pageTranslate = [
 								`(${-this.windowWidth+deltaX}px,0)`,
@@ -1000,6 +1036,15 @@
 						if (this.nextPage.isEnd) {
 							return
 						}
+						
+						// 限制边界
+						if (deltaY>0) {
+							deltaY = 0
+						}
+						if (deltaY<-this.windowHeight) {
+							deltaY = -this.windowHeight
+						}
+						
 						this.prePage.pageTranslate = [
 							`(0,0)`,
 							`(0,0)`,
@@ -1059,6 +1104,15 @@
 						}
 					}
 					if (this.pre) {   //首次下滑后
+						
+						// 限制边界
+						if (deltaY<0) {
+							deltaY = 0
+						}
+						if (deltaY>this.windowHeight) {
+							deltaY = this.windowHeight
+						}
+						
 						if (this.prePage.isCover) {  //上一页是封面
 							this.cover.pageTranslate = this.cover.pageTranslate = [
 								`(0,0)`,
