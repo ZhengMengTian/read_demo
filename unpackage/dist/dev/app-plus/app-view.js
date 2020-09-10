@@ -1557,8 +1557,8 @@ var render = function() {
                             {
                               staticClass: _vm._$g(72, "sc"),
                               staticStyle: {
-                                color: "#c0c4cc",
-                                border: "#c0c4cc solid 1px"
+                                color: "#666",
+                                border: "#666 solid 1px"
                               },
                               attrs: { _i: 72 }
                             },
@@ -1583,8 +1583,8 @@ var render = function() {
                             {
                               staticClass: _vm._$g(74, "sc"),
                               staticStyle: {
-                                color: "#c0c4cc",
-                                border: "#c0c4cc solid 1px"
+                                color: "#666",
+                                border: "#666 solid 1px"
                               },
                               attrs: { _i: 74 }
                             },

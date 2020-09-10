@@ -3,7 +3,8 @@
 <!-- 重要事项：
 	1.由于阅读页截取整行的需要，请确保文本格式和本插件中的text变量所示一致，即：！！！每一行的高度要一致！！！
 	  如果要加内容，例如每一章开头加上章节名:'<h1>章节名</h1>',请确保所加的内容是单行高度的整数倍！！
-	2.‘仅用于计算’的样式必须和阅读页样式一致，不然显示会有问题
+	2.‘仅用于计算’的样式必须和阅读页样式一致，不然显示会有问题,
+	3.字体必须是偶数，否则1.5倍行距的时候会无法截取到整行（可以优化，懒得改了）
  -->
 
 <template>
@@ -167,7 +168,7 @@
 		</view>
 		
 		<!-- 菜单层 -->
-		<view class="menu" :style="{height: `100%`, width: `${windowWidth}px`,background: directoryShow?'rgba(0, 0, 0, .5)':''}" 
+		<view class="menu" :style="{height: `100%`, width: `${windowWidth}px`}" 
 		v-if="menuShow" @touchend="closeMenu">
 			<!-- 菜单层包含返回按钮的上半部分 -->
 			<view class="menu-top" :style="{height: `${statusBarHeight + 40}px`, top: itemShow ? 0 : `-100%`}" @touchend.stop>
@@ -216,9 +217,9 @@
 				<view class="item">
 					<view class="item-name">字号</view>
 					<view class="icon" @click="bigSize" v-if="fontSize<maxFontSize">A+</view>
-					<view class="icon" style="color: #c0c4cc; border: #c0c4cc solid 1px;" v-else>A+</view>
+					<view class="icon" style="color: #666; border: #666 solid 1px;" v-else>A+</view>
 					<view class="icon" @click="smallSize" v-if="fontSize>minFontSize">A-</view>
-					<view class="icon" style="color: #c0c4cc;border: #c0c4cc solid 1px;" v-else>A-</view>
+					<view class="icon" style="color: #666;border: #666 solid 1px;" v-else>A-</view>
 					<view class="icon" @click="changeFont(false)" v-if="simplified">繁體</view>
 					<view class="icon" @click="changeFont(true)" v-else style="border: #FF9900 solid 1px;color: #FF9900">繁體</view>
 				</view>
@@ -249,7 +250,7 @@
 			
 			<!-- 目录层 -->
 			<view class="directory" :class="{container0: background === 1, container1: background === 2}"
-			 :style="{left: directoryShow ? 0 : '-100%',color: `${colorList[background - 1]}`}"  @touchend.stop>
+			 :style="{left: directoryShow ? 0 : '-100%',color: `${colorList[background - 1]}`,boxShadow:'0 0 10px 0 rgba(0,0,0,.4)'}" @touchend.stop>
 				<view class="bookname">书名</view>
 				<scroll-view scroll-y="true" class="directory-list" :scroll-into-view="`chapter${curChapter.chapterIndex}`">
 					<view v-for="(item, index) of directoryList" :key="item.chapterId" class="directory-listItem" :class="{active: index === curChapter.chapterIndex}"
@@ -277,7 +278,7 @@
 				bookName: '我是书名',
 				chapterIndexHistory: 0,    //用于记录阅读章节的index 
 				pageHistory: 0,     //用于记录章节的阅读进度
-				text:`<p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p>`,
+				text:`<p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p>`,
 				directoryList: [],  //目录列表
 				currentPage: 0,   //当前页
 				
@@ -363,6 +364,7 @@
 				systemTime: '',   //系统时间
 				systemTimeStr: '',   //系统时间字符串
 				statusBarHeight: 0, //状态栏高度
+				pixelRatio: '',    //设备像素比
 				
 				touchStartX: 0,  // 触屏起始点x
 				touchX: 0,  // 瞬时触屏点x
@@ -377,7 +379,7 @@
 				directoryShow: false,  //目录动画控制
 				turnPageTime: .5,  //翻页动画时间
 				
-				maxFontSize: 25,   //最大字体大小，px
+				maxFontSize: 30,   //最大字体大小，px
 				minFontSize: 14,   //最小字体大小，px
 				turnType: 0,  //翻页方式
 				fontSize: '',   //字体大小，
@@ -393,6 +395,13 @@
 		},
 		onLoad() {
 			this.getSystemInfo()
+		},
+		onUnload(options) {
+			
+			// #ifdef APP-PLUS
+				// 退出全屏
+				plus.navigator.setFullscreen(false)
+			// #endif
 		},
 		mounted() {
 			this.initPage()
@@ -419,12 +428,13 @@
 			**/
 			getSystemInfo() {
 				
-				const { windowWidth, windowHeight, statusBarHeight, platform } = uni.getSystemInfoSync()
+				const { windowWidth, windowHeight, statusBarHeight, platform, pixelRatio } = uni.getSystemInfoSync()
 				
 				//获取一些必要的设备参数
 				this.statusBarHeight = statusBarHeight
 				this.windowWidth = windowWidth
 				this.windowHeight = windowHeight
+				this.pixelRatio = pixelRatio
 				this.platform = platform
 				// #ifdef APP-PLUS
 					// 全屏
@@ -525,8 +535,11 @@
 			**/
 			calcHeight() {
 				if (this.contentHeight) {
-					let lineHeight = Math.floor(this.fontSize * this.lineHeight);
-					let lineNum = Math.floor((this.contentHeight + (lineHeight - this.fontSize)/2) / lineHeight)
+					let lineHeight = this.fontSize * this.lineHeight;
+					// #ifdef APP-PLUS
+						lineHeight = Math.floor(lineHeight*this.pixelRatio)/this.pixelRatio
+					// #endif
+					let lineNum = Math.floor((this.contentHeight + Math.floor((lineHeight - this.fontSize)/2)) / lineHeight)
 					this.innerHeight = lineNum * lineHeight
 				}
 				else {
@@ -536,8 +549,11 @@
 							query.select('#content').boundingClientRect(data => {
 								let height = data.height;
 								this.contentHeight = height;
-								let lineHeight = Math.floor(this.fontSize * this.lineHeight);
-								let lineNum = Math.floor((height + (lineHeight - this.fontSize)/2) / lineHeight)
+								let lineHeight = this.fontSize * this.lineHeight;
+								// #ifdef APP-PLUS
+									lineHeight = Math.floor(lineHeight*this.pixelRatio)/this.pixelRatio
+								// #endif
+								let lineNum = Math.floor((height + Math.floor((lineHeight - this.fontSize)/2)) / lineHeight)
 								this.innerHeight = lineNum * lineHeight
 								resolve()
 							}).exec();
@@ -559,6 +575,9 @@
 						const query = uni.createSelectorQuery().in(this);
 						query.select('#bookInner').boundingClientRect(data => {
 							let height = data.height;
+							// #ifdef APP-PLUS
+								height = Math.round(height*this.pixelRatio)/this.pixelRatio
+							// #endif
 							this.curChapter.totalPage = Math.ceil(height/this.innerHeight)
 							this.curChapter.ready = true   //章节准备完毕
 							resolve()
@@ -579,6 +598,9 @@
 						const query = uni.createSelectorQuery().in(this);
 						query.select('#bookInner').boundingClientRect(data => {
 							let height = data.height;
+							// #ifdef APP-PLUS
+								height = Math.round(height*this.pixelRatio)/this.pixelRatio
+							// #endif
 							this.preChapter.totalPage = Math.ceil(height/this.innerHeight)
 							this.preChapter.ready = true   //章节准备完毕
 							if (this.waitForPre) {    //发生在用户翻至上一章，但是上一章数据未准备完毕时
@@ -623,6 +645,9 @@
 						const query = uni.createSelectorQuery().in(this);
 						query.select('#bookInner').boundingClientRect(data => {
 							let height = data.height;
+							// #ifdef APP-PLUS
+								height = Math.round(height*this.pixelRatio)/this.pixelRatio
+							// #endif
 							this.nextChapter.totalPage = Math.ceil(height/this.innerHeight)
 							this.nextChapter.ready = true   //章节准备完毕
 							if (this.waitForNext) {   //发生在用户翻至下一章，但是下一章数据未准备完毕时
@@ -1691,7 +1716,7 @@
 			**/
 			async bigSize() {
 				let progress = this.progress   //记录阅读进度用于调整字体后跳转
-				this.fontSize++;
+				this.fontSize +=2
 				uni.setStorageSync('fontSize', this.fontSize)
 				this.calcHeight()
 				await this.calcCurChapter()
@@ -1714,7 +1739,7 @@
 			**/
 			async smallSize() {
 				let progress = this.progress
-				this.fontSize--;
+				this.fontSize -= 2
 				uni.setStorageSync('fontSize', this.fontSize)
 				this.calcHeight()
 				await this.calcCurChapter()
