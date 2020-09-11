@@ -23,7 +23,41 @@
 			</view>
 			<view id="content" class="content">
 				<view class="inner-box" :style="{height: `${innerHeight}px`}">
-					<view class="book-inner" id="bookInner" v-html="calcText"
+					<view class="book-inner" id="preChapter" v-html="preChapter.text"
+						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`}"
+					>
+					</view>
+				</view>
+			</view>
+			<view class="bottom-bar">
+				显示电量、页码
+			</view>
+		</view>
+		
+		<view class="container hidden">
+			<view class="chapter">
+				章节名
+			</view>
+			<view class="content">
+				<view class="inner-box" :style="{height: `${innerHeight}px`}">
+					<view class="book-inner" id="curChapter" v-html="curChapter.text"
+						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`}"
+					>
+					</view>
+				</view>
+			</view>
+			<view class="bottom-bar">
+				显示电量、页码
+			</view>
+		</view>
+		
+		<view class="container hidden">
+			<view class="chapter">
+				章节名
+			</view>
+			<view class="content">
+				<view class="inner-box" :style="{height: `${innerHeight}px`}">
+					<view class="book-inner" id="nextChapter" v-html="nextChapter.text"
 						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`}"
 					>
 					</view>
@@ -282,7 +316,6 @@
 				directoryList: [],  //目录列表
 				currentPage: 0,   //当前页
 				
-				calcText: '',   //用于计算高度的文本
 				innerHeight: 0,   //截取至整行的最大高度
 				
 				preChapter: {   //上一章数据
@@ -396,7 +429,7 @@
 		onLoad() {
 			this.getSystemInfo()
 		},
-		onUnload(options) {
+		onUnload() {
 			
 			// #ifdef APP-PLUS
 				// 退出全屏
@@ -568,12 +601,11 @@
 			* 计算本章页数
 			**/
 			calcCurChapter() {
-				this.calcText = this.curChapter.text
 				return new Promise((resolve, reject) => {
 					// 此处setTimeout 100ms是为了确保元素渲染完毕从而获取正确高度，如果遇到页面页数计算不正确的情况可以增加时间试试看
 					setTimeout(() => {
 						const query = uni.createSelectorQuery().in(this);
-						query.select('#bookInner').boundingClientRect(data => {
+						query.select('#curChapter').boundingClientRect(data => {
 							let height = data.height;
 							// #ifdef APP-PLUS
 								height = Math.round(height*this.pixelRatio)/this.pixelRatio
@@ -591,12 +623,11 @@
 			* 计算上一章页数,并翻页（如果有）
 			**/
 			calcPreChapter() {
-				this.calcText = this.preChapter.text
 				return new Promise((resolve, reject) => {
 					// 此处setTimeout 100ms是为了确保元素渲染完毕从而获取正确高度，如果遇到页面页数计算不正确的情况可以增加时间试试看
 					setTimeout(() => {
 						const query = uni.createSelectorQuery().in(this);
-						query.select('#bookInner').boundingClientRect(data => {
+						query.select('#preChapter').boundingClientRect(data => {
 							let height = data.height;
 							// #ifdef APP-PLUS
 								height = Math.round(height*this.pixelRatio)/this.pixelRatio
@@ -638,12 +669,11 @@
 			* 计算下一章页数,并翻页（如果有）
 			**/
 			calcNextChapter() {
-				this.calcText = this.nextChapter.text
 				return new Promise((resolve, reject) => {
 					// 此处setTimeout 100ms是为了确保元素渲染完毕从而获取正确高度，如果遇到页面页数计算不正确的情况可以增加时间试试看
 					setTimeout(() => {
 						const query = uni.createSelectorQuery().in(this);
-						query.select('#bookInner').boundingClientRect(data => {
+						query.select('#nextChapter').boundingClientRect(data => {
 							let height = data.height;
 							// #ifdef APP-PLUS
 								height = Math.round(height*this.pixelRatio)/this.pixelRatio
@@ -1710,7 +1740,6 @@
 				uni.setStorageSync('chapterIndexHistory', index)
 			},
 			
-			
 			/**
 			* 加大字体
 			**/
@@ -1720,6 +1749,8 @@
 				uni.setStorageSync('fontSize', this.fontSize)
 				this.calcHeight()
 				await this.calcCurChapter()
+				let page = Math.floor((this.curChapter.totalPage - 1) * progress)
+				this.goToPage(page)
 				if (this.preChapter.ready && !this.preChapter.isCover) {
 					this.preChapter.ready = false
 					await this.calcPreChapter()
@@ -1728,8 +1759,7 @@
 					this.nextChapter.ready = false
 					await this.calcNextChapter()
 				}
-				let page = Math.floor((this.curChapter.totalPage - 1) * progress)
-				this.goToPage(page)
+				
 				
 				
 			},
@@ -1743,6 +1773,8 @@
 				uni.setStorageSync('fontSize', this.fontSize)
 				this.calcHeight()
 				await this.calcCurChapter()
+				let page = Math.floor((this.curChapter.totalPage - 1) * progress)
+				this.goToPage(page)
 				if (this.preChapter.ready && !this.preChapter.isCover) {
 					this.preChapter.ready = false
 					await this.calcPreChapter()
@@ -1751,8 +1783,7 @@
 					this.nextChapter.ready = false
 					await this.calcNextChapter()
 				}
-				let page = Math.floor((this.curChapter.totalPage - 1) * progress)
-				this.goToPage(page)
+				
 			},
 			
 			/**
@@ -1781,7 +1812,6 @@
 				}
 			},
 			
-			
 			/**
 			* 改变行距
 			**/
@@ -1795,6 +1825,8 @@
 					uni.setStorageSync('lineHeight', this.lineHeight)
 					this.calcHeight()
 					await this.calcCurChapter()
+					let page = Math.floor((this.curChapter.totalPage - 1) * progress)
+					this.goToPage(page)
 					if (this.preChapter.ready && !this.preChapter.isCover) {
 						this.preChapter.ready = false
 						await this.calcPreChapter()
@@ -1803,10 +1835,10 @@
 						this.nextChapter.ready = false
 						await this.calcNextChapter()
 					}
-					let page = Math.floor((this.curChapter.totalPage - 1) * progress)
-					this.goToPage(page)
+					
 				}
 			},
+			
 			
 			/**
 			* 改变翻页方式
