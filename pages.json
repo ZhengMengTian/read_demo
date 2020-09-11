@@ -9,7 +9,10 @@
 	    ,{
             "path" : "pages/read/read",
             "style": {
-            	"navigationStyle": "custom"
+            	"navigationStyle": "custom",
+				"app-plus":{
+					"bounce":"none"
+				}
             }
         }
     ],
