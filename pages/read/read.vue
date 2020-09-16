@@ -4,17 +4,11 @@
 	1.由于阅读页截取整行的需要，请确保文本格式和本插件中的text变量所示一致，即：！！！每一行的高度要一致！！！
 	  如果要加内容，例如每一章开头加上章节名:'<h1>章节名</h1>',请确保所加的内容是单行高度的整数倍！！
 	2.‘仅用于计算’的样式必须和阅读页样式一致，不然显示会有问题,
-	3.字体必须是偶数，否则1.5倍行距的时候会无法截取到整行（可以优化，懒得改了）
+	3.字体必须是偶数，否则1.5倍行距的时候会无法截取到整行
  -->
 
 <template>
 	<view style="height: 100%;">
-		
-		<!-- 操作层 左1/3翻上页，中1/3呼出菜单栏，右1/3翻下页 -->
-		<!-- 操作层1，操作内容翻页 -->
-		<view class="action" :style="{zIndex: 200}" @touchstart="touchStart" @touchend="touchEnd" @touchmove="touchMove"></view>
-		<!-- 操作层2，操作封面 -->
-		<view class="action" :style="{zIndex: 202}"  @touchstart="coverTouchStart" @touchend="coverTouchEnd" @touchmove="coverTouchMove" v-if="cover.show"></view>
 		
 		<!-- 仅用于计算（结构和样式请和阅读页一致） -->
 		<view class="container hidden">
@@ -75,6 +69,7 @@
 		<view class="cover container" :class="{container0: background === 1, container1: background === 2}"
 			:style="{zIndex: 201, transform: `translate${cover.pageTranslate[turnType]}`, transition: `transform ${showAnimation?turnPageTime:0}s`,
 			boxShadow:showShadow&&turnType===0?'0 0 10px 0 rgba(0,0,0,.4)':''}"
+			@touchstart="coverTouchStart" @touchend="coverTouchEnd" @touchmove="coverTouchMove"
 		>
 			<image>
 				
@@ -102,13 +97,18 @@
 			<!-- 外层class="content"用于计算阅读部分的高度 -->
 			<view class="content">
 				<!-- 内层class="inner-box"利用innerHeight将内容截取至整行，防止文字不完整的情况出现 -->
-				<view class="inner-box" :style="{height: `${innerHeight}px`}">
+				<view class="inner-box" :style="{height: `${innerHeight}px`}" v-if="prePage.canRead">
 					<!-- 最里层class="book-inner"的用于获取文本总高度，计算总页数，注意不可以overflow:hidden -->
 					<view class="book-inner" v-html="prePage.text"
 						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`,color: `${colorList[background - 1]}`,
 						transform: `translateY(-${prePage.pageNum*innerHeight}px)`}"
 					>
 					</view>
+				</view>
+				<view style="display:flex;flex-flow: column;justify-content: center;align-items: center;height: 100%;"
+				 v-else>
+					付费章节
+					<view style="padding: 5px 15px;background-color: #eee;">去购买</view>
 				</view>
 				
 			</view>
@@ -133,18 +133,24 @@
 		<view class="container" :class="{container0: background === 1, container1: background === 2}"
 			:style="{zIndex: 101, transform: `translate${curPage.pageTranslate[turnType]}`, transition: `transform ${showAnimation?turnPageTime:0}s`,
 			boxShadow:showShadow&&turnType===0?'0 0 10px 0 rgba(0,0,0,.4)':''}"
+			@touchstart="touchStart" @touchend="touchEnd" @touchmove="touchMove"
 		>
 			<!-- 章节名 -->
 			<view class="chapter">
 				{{curPage.chapterName}}
 			</view>
 			<view class="content">
-				<view class="inner-box" :style="{height: `${innerHeight}px`}">
+				<view class="inner-box" :style="{height: `${innerHeight}px`}" v-if="curPage.canRead">
 					<view class="book-inner" v-html="curPage.text"
 						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`,color: `${colorList[background - 1]}`,
 						transform: `translateY(-${curPage.pageNum*innerHeight}px)`}"
 					>
 					</view>
+				</view>
+				<view style="display:flex;flex-flow: column;justify-content: center;align-items: center;height: 100%;"
+				 v-else>
+					付费章节
+					<view style="padding: 5px 15px;background-color: #eee;" @touchstart.stop @touchmove.stop @touchend.stop="buyBook">去购买</view>
 				</view>
 				
 			</view>
@@ -175,12 +181,17 @@
 				{{nextPage.chapterName}}
 			</view>
 			<view class="content">
-				<view class="inner-box" :style="{height: `${innerHeight}px`}">
+				<view class="inner-box" :style="{height: `${innerHeight}px`}" v-if="nextPage.canRead">
 					<view class="book-inner" v-html="nextPage.text"
 						:style="{fontSize: `${fontSize}px`, lineHeight: `${lineHeight*fontSize}px`,color: `${colorList[background - 1]}`,
 						transform: `translateY(-${nextPage.pageNum*innerHeight}px)`}"
 					>
 					</view>
+				</view>
+				<view style="display:flex;flex-flow: column;justify-content: center;align-items: center;height: 100%;"
+				 v-else>
+					付费章节
+					<view style="padding: 5px 15px;background-color: #eee;">去购买</view>
 				</view>
 				
 			</view>
@@ -310,8 +321,11 @@
 		data() {
 			return {
 				bookName: '我是书名',
-				chapterIndexHistory: 0,    //用于记录阅读章节的index 
-				pageHistory: 0,     //用于记录章节的阅读进度
+				bookId: 1,
+				history: {  //本书历史记录
+					chapterIndex: 0,
+					progress: 0
+				},
 				text:`<p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测试测试测试，测试测试测。</p><p>测试测试测试测试测试，测试测试，测试测试，测试测试测试测试测试，测试测试测试测试测试</p>`,
 				directoryList: [],  //目录列表
 				currentPage: 0,   //当前页
@@ -323,14 +337,16 @@
 					chapterIndex: '',
 					chapterName: '',
 					text: '',
-					totalPage: ''
+					totalPage: '',
+					canRead: true
 				},
 				
 				curChapter: {   //本一章数据
 					chapterIndex: '',
 					chapterName: '',
 					text: '',
-					totalPage: ''
+					totalPage: '',
+					canRead: true
 				},
 				
 				nextChapter: {   //下一章数据
@@ -338,14 +354,17 @@
 					chapterIndex: '',
 					chapterName: '',
 					text: '',
-					totalPage: ''
+					totalPage: '',
+					canRead: true
 				},
 				
-				tmpChapter: {},  //暂存章节内容
+				tmpChapter: {  //暂存章节内容
+					text: '',
+					canRead: true
+				},
 				
 				cover: {    //封面的状态
 					pageTranslate: ['', '', ''],  //页面位移，三个数对应三种翻页方式
-					show: false   //是否显示
 				},
 				
 				prePage: {    //上一页数据
@@ -355,6 +374,7 @@
 					pageNum: '',
 					totalPage: 1,
 					pageTranslate: ['', '', ''],  //页面位移，三个数对应三种翻页方式
+					canRead: true
 				},
 				
 				curPage: {   //本页数据
@@ -364,6 +384,7 @@
 					pageNum: 1,
 					totalPage: 1,
 					pageTranslate: ['', '', ''],  //页面位移，三个数对应三种翻页方式
+					canRead: true
 				},
 				
 				nextPage: {   //下一页数据
@@ -373,6 +394,7 @@
 					pageNum: '',
 					totalPage: '',
 					pageTranslate: ['', '', ''],  //页面位移，三个数对应三种翻页方式
+					canRead: true
 				},
 				
 				
@@ -435,6 +457,11 @@
 				// 退出全屏
 				plus.navigator.setFullscreen(false)
 			// #endif
+			
+			this.setStorage()
+		},
+		onHide() {
+			this.setStorage()
 		},
 		mounted() {
 			this.initPage()
@@ -448,6 +475,29 @@
 			}
 		},
 		methods: {
+			
+			setStorage() {
+				let history = uni.getStorageSync('history')
+				if (typeof history !== 'object') {
+					history = []
+				}
+				let have = false
+				history.forEach((value) => {
+					if (value.bookId === this.bookId) {
+						have = true
+						value.chapterIndex = this.curChapter.chapterIndex
+						value.progress = this.progress
+					}
+				})
+				if (!have) {
+					history.push({
+						bookId: this.bookId,
+						chapterIndex: this.curChapter.chapterIndex,
+						progress: this.progress
+					})
+				}
+				uni.setStorageSync('history', history)
+			},
 			
 			/**
 			* 返回上一页面
@@ -525,13 +575,36 @@
 				/*****************************************/
 				
 				//可能缓存在前端可能从后端拿，如果是异步注意同步处理
-				this.fontSize = uni.getStorageSync('fontSize') || 16;
-				this.simplified = uni.getStorageSync('simplified') || 1;
-				this.lineHeight = uni.getStorageSync('lineHeight') || 1.5;
-				this.background = uni.getStorageSync('background') || 1;
-				this.turnType = uni.getStorageSync('turnType') || 0;
-				this.chapterIndexHistory = uni.getStorageSync('chapterIndexHistory') || 0;
-				this.progressHistory = uni.getStorageSync('progressHistory') || 0;
+				this.fontSize = uni.getStorageSync('fontSize')
+				if (typeof this.fontSize !== 'number') {
+					this.fontSize = 16
+				}
+				this.simplified = uni.getStorageSync('simplified')
+				if (typeof this.simplified !== 'number') {
+					this.simplified = 1
+				}
+				this.lineHeight = uni.getStorageSync('lineHeight')
+				if (typeof this.lineHeight !== 'number') {
+					this.lineHeight = 1.5
+				}
+				this.background = uni.getStorageSync('background')
+				if (typeof this.background !== 'number') {
+					this.background = 1
+				}
+				this.turnType = uni.getStorageSync('turnType')
+				if (typeof this.turnType !== 'number') {
+					this.turnType = 0
+				}
+				let history = uni.getStorageSync('history')
+				if (typeof history !== 'object') {
+					history = []
+				}
+				history.forEach((value) => {
+					if (value.bookId === this.bookId) {
+						this.history = value
+					}
+				})
+				
 				/*****************************************/
 				/*****************************************/
 				/*****************************************/
@@ -553,11 +626,11 @@
 				]
 				await this.calcHeight()
 				await this.getDirectoryList()
-				if (this.chapterIndexHistory > this.directoryList.length - 1) {
-					this.chapterIndexHistory = 0
+				if (this.history.chapterIndex > this.directoryList.length - 1) {
+					this.history.chapterIndex = 0
 				}
-				await this.getThreeChapter(this.chapterIndexHistory)
-				let page = Math.floor((this.curChapter.totalPage - 1) * this.progressHistory)
+				await this.getThreeChapter(this.history.chapterIndex)
+				let page = Math.floor((this.curChapter.totalPage - 1) * this.history.progress)
 				this.goToPage(page)
 				uni.hideLoading()
 				
@@ -610,7 +683,7 @@
 							// #ifdef APP-PLUS
 								height = Math.round(height*this.pixelRatio)/this.pixelRatio
 							// #endif
-							this.curChapter.totalPage = Math.ceil(height/this.innerHeight)
+							this.curChapter.totalPage = Math.ceil(height/this.innerHeight) || 1
 							this.curChapter.ready = true   //章节准备完毕
 							resolve()
 						}).exec();
@@ -632,24 +705,12 @@
 							// #ifdef APP-PLUS
 								height = Math.round(height*this.pixelRatio)/this.pixelRatio
 							// #endif
-							this.preChapter.totalPage = Math.ceil(height/this.innerHeight)
+							this.preChapter.totalPage = Math.ceil(height/this.innerHeight) || 1
 							this.preChapter.ready = true   //章节准备完毕
 							if (this.waitForPre) {    //发生在用户翻至上一章，但是上一章数据未准备完毕时
 								uni.hideLoading()   //把loading关掉
 								this.waitForPre = false;
 								//页面准备完毕
-								this.prePage = {
-									ready: this.preChapter.ready,
-									chapterName: this.preChapter.chapterName,
-									text: this.preChapter.text,
-									pageNum: this.preChapter.totalPage - 1,
-									totalPage: this.preChapter.totalPage,
-									pageTranslate: [
-										`(${-this.windowWidth}px,0)`,
-										`(${-this.windowWidth}px,0)`,
-										`(0,${-this.windowHeight}px)`
-									]
-								}
 								this.goPrePage()
 							}
 							if (this.waitForPreChapter) {
@@ -678,25 +739,12 @@
 							// #ifdef APP-PLUS
 								height = Math.round(height*this.pixelRatio)/this.pixelRatio
 							// #endif
-							this.nextChapter.totalPage = Math.ceil(height/this.innerHeight)
+							this.nextChapter.totalPage = Math.ceil(height/this.innerHeight) || 1
 							this.nextChapter.ready = true   //章节准备完毕
 							if (this.waitForNext) {   //发生在用户翻至下一章，但是下一章数据未准备完毕时
 								uni.hideLoading()    //把loading关掉
 								this.waitForNext = false;
 								//页面准备完毕
-								this.nextPage = {
-									ready: this.nextChapter.ready,
-									chapterName: this.nextChapter.chapterName,
-									text: this.nextChapter.text,
-									pageNum: 0,
-									totalPage: this.nextChapter.totalPage,
-									pageTranslate: [
-										`(0,0)`,
-										`(${this.windowWidth}px,0)`,
-										`(0,${this.windowHeight}px)`
-									]
-								}
-								
 								this.goNextPage()
 							}
 							if (this.waitForNextChapter) {
@@ -729,104 +777,76 @@
 			**/
 			coverTouchMove(e) {
 				this.showShadow = true
+				let delta = 0
 				if (this.turnType === 0 || this.turnType === 1) {  //翻页方式为‘覆盖’或者‘左右平移’
-					let deltaX = e.touches[0].clientX - this.touchStartX
-					this.delta = e.touches[0].clientX - this.touchX
-					this.touchX = e.touches[0].clientX;
-					if (this.next) {   //首次左滑后
+					delta = e.touches[0].clientX - this.touchStartX;
 					
-						// 限制边界
-						if (deltaX>0) {
-							deltaX = 0
-						}
-						if (deltaX<-this.windowWidth) {
-							deltaX = -this.windowWidth
-						}
-						
-						this.cover.pageTranslate = [
-							`(${deltaX}px,0)`,
-							`(${deltaX}px,0)`,
-							`(0,0)`
-						]
-						this.curPage.pageTranslate = [
-							`(0,0)`,
-							`(${this.windowWidth + deltaX}px,0)`,
-							`(0,0)`
-						]
+					// 限制边界
+					if (delta>this.windowWidth) {
+						delta = this.windowWidth
 					}
-					else if (!this.pre &&  deltaX < 0) {  //首次左滑
-						this.next = true
-						this.cover.pageTranslate = [
-							`(${deltaX}px,0)`,
-							`(${deltaX}px,0)`,
-							`(0,0)`
-						]
-						this.curPage.pageTranslate = [
-							`(0,0)`,
-							`(${this.windowWidth + deltaX}px,0)`,
-							`(0,0)`
-						]
+					if (delta<-this.windowWidth) {
+						delta = -this.windowWidth
 					}
-					if (this.pre) {   //首次右滑后，由于是封面不做任何操作
-						return
-					}
-					else if (!this.next && deltaX > 0) {  //首次右滑
-						this.pre = true
-						uni.showToast({
-							title: '已经是第一页了',
-							icon: 'none'
-						})
-					}
+					
+					this.delta = e.touches[0].clientX - this.touchX;
+					this.touchX = e.touches[0].clientX;
 				}
-				else {     //翻页方式为‘上下平移’
-					let deltaY = e.touches[0].clientY - this.touchStartY;
+				else {	//翻页方式为‘上下平移’
+					delta = e.touches[0].clientY - this.touchStartY;
+					
+					// 限制边界
+					if (delta>this.windowHeight) {
+						delta = this.windowHeight
+					}
+					if (delta<-this.windowHeight) {
+						delta = -this.windowHeight
+					}
+					
 					this.delta = e.touches[0].clientY - this.touchY;
 					this.touchY = e.touches[0].clientY;
-					if (this.next) {   //首次上滑后
-						
-						// 限制边界
-						if (deltaY>0) {
-							deltaY = 0
-						}
-						if (deltaY<-this.windowHeight) {
-							deltaY = -this.windowHeight
-						}
-						
-						this.cover.pageTranslate = [
-							`(0,0)`,
-							`(0,0)`,
-							`(0,${deltaY}px)`
-						]
-						this.curPage.pageTranslate = [
-							`(0,0)`,
-							`(0,0)`,
-							`(0,${this.windowHeight + deltaY}px)`
-						]
+				}
+				
+				if (this.next) {   //首次翻下一页之后
+				
+					// 限制边界
+					if (delta>0) {
+						delta = 0
 					}
-					else if (!this.pre &&  deltaY < 0) {  //首次上滑
-						this.next = true
-						this.cover.pageTranslate = [
-							`(0,0)`,
-							`(0,0)`,
-							`(0,${deltaY}px)`
-						]
-						this.curPage.pageTranslate = [
-							`(0,0)`,
-							`(0,0)`,
-							`(0,${this.windowHeight + deltaY}px)`
-						]
-					}
-					if (this.pre) {   //首次下滑后，由于是封面不做任何操作
-						return
-					}
-					else if (!this.next && deltaY > 0) {  //首次下滑
-						this.pre = true
-						uni.showToast({
-							title: '已经是第一页了',
-							icon: 'none'
-						})
-						
-					}
+					
+					this.cover.pageTranslate = [
+						`(${delta}px,0)`,
+						`(${delta}px,0)`,
+						`(0,${delta}px)`
+					]
+					this.curPage.pageTranslate = [
+						`(0,0)`,
+						`(${this.windowWidth + delta}px,0)`,
+						`(0,${this.windowHeight + delta}px)`
+					]
+				}
+				if (!this.pre && !this.next && delta < 0) {  //首次翻下一页
+					this.next = true
+					this.cover.pageTranslate = [
+						`(${delta}px,0)`,
+						`(${delta}px,0)`,
+						`(0,${delta}px)`
+					]
+					this.curPage.pageTranslate = [
+						`(0,0)`,
+						`(${this.windowWidth + delta}px,0)`,
+						`(0,${this.windowHeight + delta}px,)`
+					]
+				}
+				if (this.pre) {   //首次右滑后，由于是封面不做任何操作
+					return
+				}
+				if (!this.pre && !this.next && delta > 0) {  //首次右滑
+					this.pre = true
+					uni.showToast({
+						title: '已经是第一页了',
+						icon: 'none'
+					})
 				}
 				
 				
@@ -842,7 +862,7 @@
 				if (this.turnType === 0 || this.turnType === 1) {  //翻页方式为‘覆盖’或者‘左右平移’
 					delta = e.changedTouches[0].clientX - this.touchStartX;
 				}
-				else {
+				else {   //翻页方式为‘上下平移’
 					delta = e.changedTouches[0].clientY - this.touchStartY;
 				}
 				if (delta === 0) {
@@ -853,7 +873,6 @@
 						})
 					}
 					else if (e.changedTouches[0].clientX>this.windowWidth/3*2) { //点击屏幕右1/3为下一页
-						this.cover.show = false
 						this.cover.pageTranslate = [
 							`(${-this.windowWidth}px,0)`,
 							`(${-this.windowWidth}px,0)`,
@@ -869,7 +888,7 @@
 						this.showMenu()
 					}
 				}
-				else {    //翻页方式为‘上下平移’
+				else {
 					if (this.next && this.delta <= 0) {  //下一页
 						this.cover.pageTranslate = [
 							`(${-this.windowWidth}px,0)`,
@@ -881,7 +900,6 @@
 							`(0,0)`,
 							`(0,0)`
 						]
-						this.cover.show = false
 					}
 					else if (this.next && this.delta > 0) {  //取消翻页
 						this.cover.pageTranslate = [
@@ -902,7 +920,7 @@
 			},
 			
 			/**
-			* 触摸开始, 页面轮换
+			* 触摸开始
 			**/
 			touchStart(e) {
 				this.showAnimation = false
@@ -910,12 +928,6 @@
 				this.touchStartX = e.touches[0].clientX;
 				this.touchY = e.touches[0].clientY;
 				this.touchStartY = e.touches[0].clientY;
-				if (this.waitForNext || this.waitForPre) {
-					return
-				}
-				//重置页面状态
-				this.goToPage(this.currentPage)
-				
 			},
 			
 			/**
@@ -923,326 +935,229 @@
 			**/
 			touchMove(e) {
 				this.showShadow = true;
+				let delta = 0
 				if (this.turnType === 0 || this.turnType === 1) {  //翻页方式为‘覆盖’或者‘左右平移’
-					let deltaX = e.touches[0].clientX - this.touchStartX;
+					delta = e.touches[0].clientX - this.touchStartX;
+					
+					// 限制边界
+					if (delta>this.windowWidth) {
+						delta = this.windowWidth
+					}
+					if (delta<-this.windowWidth) {
+						delta = -this.windowWidth
+					}
+					
 					this.delta = e.touches[0].clientX - this.touchX;
 					this.touchX = e.touches[0].clientX;
-					if (this.waitForNext || this.waitForPre) {
-						return
-					}
-					if (this.next) {   //首次左滑后
-						if (this.nextPage.isEnd) {
-							return
-						}
-						
-						// 限制边界
-						if (deltaX>0) {
-							deltaX = 0
-						}
-						if (deltaX<-this.windowWidth) {
-							deltaX = -this.windowWidth
-						}
-						
-						this.prePage.pageTranslate = [
-							`(${-this.windowWidth}px,0)`,
-							`(${-this.windowWidth+deltaX}px,0)`,
-							`(0,0)`
-						]
-						this.curPage.pageTranslate = [
-							`(${deltaX}px,0)`,
-							`(${deltaX}px,0)`,
-							`(0,0)`
-						]
-						this.nextPage.pageTranslate = [
-							`(0,0)`,
-							`(${this.windowWidth+deltaX}px,0)`,
-							`(0,0)`
-						]
-					}
-					else if (!this.pre &&  deltaX < 0) {  //首次左滑
-						this.next = true
-						if (this.nextPage.ready) {  //页面准备好了
-							if (this.nextPage.isEnd) {
-								
-								
-								/*****************************************/
-								/**********    根据需要更改    ************/
-								/*****************************************/
-								uni.showToast({
-									title:'跳转推荐页',
-									icon:'none'
-								})
-								/*****************************************/
-								/*****************************************/
-								/*****************************************/
-								
-								
-							}
-							else {
-								this.prePage.pageTranslate = [
-									`(${-this.windowWidth}px,0)`,
-									`(${-this.windowWidth+deltaX}px,0)`,
-									`(0,0)`
-								]
-								this.curPage.pageTranslate = [
-									`(${deltaX}px,0)`,
-									`(${deltaX}px,0)`,
-									`(0,0)`
-								]
-								this.nextPage.pageTranslate = [
-									`(0,0)`,
-									`(${this.windowWidth+deltaX}px,0)`,
-									`(0,0)`
-								]
-							}
-						}
-						else {
-							this.waitForNext = true   //等待下一页准备完毕后跳转
-							uni.showLoading({
-								title: '正在准备下一章'
-							})
-						}
-					}
-					if (this.pre) {   //首次右滑后
-					
-						// 限制边界
-						if (deltaX<0) {
-							deltaX = 0
-						}
-						if (deltaX>this.windowWidth) {
-							deltaX = this.windowWidth
-						}
-						
-						if (this.prePage.isCover) {  //上一页是封面
-							this.cover.pageTranslate = [
-								`(${-this.windowWidth+deltaX}px,0)`,
-								`(${-this.windowWidth+deltaX}px,0)`,
-								`(0,0)`
-							]
-							this.curPage.pageTranslate = [
-								`(0,0)`,
-								`(${deltaX}px,0)`,
-								`(0,0)`
-							]
-						}
-						else {
-							this.prePage.pageTranslate = [
-								`(${-this.windowWidth+deltaX}px,0)`,
-								`(${-this.windowWidth+deltaX}px,0)`,
-								`(0,0)`
-							]
-							this.curPage.pageTranslate = [
-								`(0,0)`,
-								`(${deltaX}px,0)`,
-								`(0,0)`
-							]
-							this.nextPage.pageTranslate = [
-								`(0,0)`,
-								`(${this.windowWidth+deltaX}px,0)`,
-								`(0,0)`
-							]
-						}
-					}
-					else if (!this.next && deltaX > 0) {  //首次右滑
-						this.pre = true
-						if (this.prePage.ready) {  //页面准备好了
-							if (this.prePage.isCover) {  //上一页是封面
-								this.cover.pageTranslate = [
-									`(${-this.windowWidth+deltaX}px,0)`,
-									`(${-this.windowWidth+deltaX}px,0)`,
-									`(0,0)`
-								]
-								this.curPage.pageTranslate = [
-									`(0,0)`,
-									`(${deltaX}px,0)`,
-									`(0,0)`
-								]
-							}
-							else {
-								this.prePage.pageTranslate = [
-									`(${-this.windowWidth+deltaX}px,0)`,
-									`(${-this.windowWidth+deltaX}px,0)`,
-									`(0,0)`
-								]
-								this.curPage.pageTranslate = [
-									`(0,0)`,
-									`(${deltaX}px,0)`,
-									`(0,0)`
-								]
-								this.nextPage.pageTranslate = [
-									`(0,0)`,
-									`(${this.windowWidth+deltaX}px,0)`,
-									`(0,0)`
-								]
-							}
-						}
-						else {
-							this.waitForPre = true   //等待上一页准备完毕后跳转
-							uni.showLoading({
-								title: '正在准备上一章'
-							})
-						}
-						
-					}
 				}
-				else {     //翻页方式为‘上下平移’
-					let deltaY = e.touches[0].clientY - this.touchStartY;
+				else {	//翻页方式为‘上下平移’
+					delta = e.touches[0].clientY - this.touchStartY;
+					
+					// 限制边界
+					if (delta>this.windowHeight) {
+						delta = this.windowHeight
+					}
+					if (delta<-this.windowHeight) {
+						delta = -this.windowHeight
+					}
+					
 					this.delta = e.touches[0].clientY - this.touchY;
 					this.touchY = e.touches[0].clientY;
-					if (this.waitForNext || this.waitForPre) {
+				}
+				
+				if (this.next && this.nextPage.ready) {   //首次翻下一页之后
+					if (this.nextPage.isEnd) {
 						return
 					}
-					if (this.next) {   //首次上滑后
+					
+					// 限制边界
+					if (delta>0) {
+						delta = 0
+					}
+					
+					this.prePage.pageTranslate = [
+						`(${-this.windowWidth}px,0)`,
+						`(${-this.windowWidth+delta}px,0)`,
+						`(0,${-this.windowHeight+delta}px)`
+					]
+					this.curPage.pageTranslate = [
+						`(${delta}px,0)`,
+						`(${delta}px,0)`,
+						`(0,${delta}px)`
+					]
+					this.nextPage.pageTranslate = [
+						`(0,0)`,
+						`(${this.windowWidth+delta}px,0)`,
+						`(0,${this.windowHeight+delta}px)`
+					]
+				}
+				if (!this.pre && !this.next && delta < 0) {  //首次翻下一页
+					this.next = true
+					if (this.nextPage.ready) {  //页面准备好了
 						if (this.nextPage.isEnd) {
-							return
+							
+							
+							/*****************************************/
+							/**********    根据需要更改    ************/
+							/*****************************************/
+							uni.showToast({
+								title:'跳转推荐页',
+								icon:'none'
+							})
+							/*****************************************/
+							/*****************************************/
+							/*****************************************/
+							
+							
 						}
-						
-						// 限制边界
-						if (deltaY>0) {
-							deltaY = 0
+						else {
+							this.prePage.pageTranslate = [
+								`(${-this.windowWidth}px,0)`,
+								`(${-this.windowWidth+delta}px,0)`,
+								`(0,${-this.windowHeight+delta}px)`
+							]
+							this.curPage.pageTranslate = [
+								`(${delta}px,0)`,
+								`(${delta}px,0)`,
+								`(0,${delta}px)`
+							]
+							this.nextPage.pageTranslate = [
+								`(0,0)`,
+								`(${this.windowWidth+delta}px,0)`,
+								`(0,${this.windowHeight+delta}px)`
+							]
 						}
-						if (deltaY<-this.windowHeight) {
-							deltaY = -this.windowHeight
+					}
+					else if (this.nextChapter.ready) {  //下一章已经准备好了
+						this.nextPage = {
+							ready: this.nextChapter.ready,
+							chapterName: this.nextChapter.chapterName,
+							text: this.nextChapter.text,
+							pageNum: 0,
+							totalPage: this.nextChapter.totalPage,
+							pageTranslate: [
+								`(0,0)`,
+								`(${this.windowWidth}px,0)`,
+								`(0,${this.windowHeight}px)`
+							],
+							canRead: this.nextChapter.canRead
 						}
-						
 						this.prePage.pageTranslate = [
-							`(0,0)`,
-							`(0,0)`,
-							`(0,${-this.windowHeight + deltaY}px)`
+							`(${-this.windowWidth}px,0)`,
+							`(${-this.windowWidth+delta}px,0)`,
+							`(0,${-this.windowHeight+delta}px)`
 						]
 						this.curPage.pageTranslate = [
-							`(0,0)`,
-							`(0,0)`,
-							`(0,${deltaY}px)`
+							`(${delta}px,0)`,
+							`(${delta}px,0)`,
+							`(0,${delta}px)`
 						]
 						this.nextPage.pageTranslate = [
 							`(0,0)`,
-							`(0,0)`,
-							`(0,${this.windowHeight + deltaY}px)`
+							`(${this.windowWidth+delta}px,0)`,
+							`(0,${this.windowHeight+delta}px)`
 						]
 					}
-					else if (!this.pre &&  deltaY < 0) {  //首次上滑
-						this.next = true
-						if (this.nextPage.ready) {  //页面准备好了
-							if (this.nextPage.isEnd) {
-								
-								/*****************************************/
-								/**********    根据需要更改    ************/
-								/*****************************************/
-								uni.showToast({
-									title:'跳转推荐页',
-									icon:'none'
-								})
-								/*****************************************/
-								/*****************************************/
-								/*****************************************/
-								
-							}
-							else {
-								this.prePage.pageTranslate = [
-									`(0,0)`,
-									`(0,0)`,
-									`(0,${-this.windowHeight + deltaY}px)`
-								]
-								this.curPage.pageTranslate = [
-									`(0,0)`,
-									`(0,0)`,
-									`(0,${deltaY}px)`
-								]
-								this.nextPage.pageTranslate = [
-									`(0,0)`,
-									`(0,0)`,
-									`(0,${this.windowHeight + deltaY}px)`
-								]
-							}
-						}
-						else {
-							this.waitForNext = true   //等待下一页准备完毕后跳转
-							uni.showLoading({
-								title: '正在准备下一章'
-							})
-						}
+				}
+				if (this.pre && this.prePage.ready) {   //首次翻上一页之后
+					
+					// 限制边界
+					if (delta<0) {
+						delta = 0
 					}
-					if (this.pre) {   //首次下滑后
-						
-						// 限制边界
-						if (deltaY<0) {
-							deltaY = 0
-						}
-						if (deltaY>this.windowHeight) {
-							deltaY = this.windowHeight
-						}
-						
+					
+					if (this.prePage.isCover) {  //上一页是封面
+						this.cover.pageTranslate = [
+							`(${-this.windowWidth+delta}px,0)`,
+							`(${-this.windowWidth+delta}px,0)`,
+							`(0,${-this.windowHeight+delta}px)`
+						]
+						this.curPage.pageTranslate = [
+							`(0,0)`,
+							`(${delta}px,0)`,
+							`(0,${delta}px)`
+						]
+					}
+					else {
+						this.prePage.pageTranslate = [
+							`(${-this.windowWidth+delta}px,0)`,
+							`(${-this.windowWidth+delta}px,0)`,
+							`(0,${-this.windowHeight+delta}px)`
+						]
+						this.curPage.pageTranslate = [
+							`(0,0)`,
+							`(${delta}px,0)`,
+							`(0,${delta}px)`
+						]
+						this.nextPage.pageTranslate = [
+							`(0,0)`,
+							`(${this.windowWidth+delta}px,0)`,
+							`(0,${this.windowHeight+delta}px)`
+						]
+					}
+				}
+				if (!this.pre && !this.next && delta > 0) {  //首次翻上一页
+					this.pre = true
+					if (this.prePage.ready) {  //页面准备好了
 						if (this.prePage.isCover) {  //上一页是封面
-							this.cover.pageTranslate = this.cover.pageTranslate = [
-								`(0,0)`,
-								`(0,0)`,
-								`(0,${-this.windowHeight + deltaY}px)`
+							this.cover.pageTranslate = [
+								`(${-this.windowWidth+delta}px,0)`,
+								`(${-this.windowWidth+delta}px,0)`,
+								`(0,${-this.windowHeight+delta}px)`
 							]
 							this.curPage.pageTranslate = [
 								`(0,0)`,
-								`(0,0)`,
-								`(0,${deltaY}px)`
+								`(${delta}px,0)`,
+								`(0,${delta}px)`
 							]
 						}
 						else {
 							this.prePage.pageTranslate = [
-								`(0,0)`,
-								`(0,0)`,
-								`(0,${-this.windowHeight + deltaY}px)`
+								`(${-this.windowWidth+delta}px,0)`,
+								`(${-this.windowWidth+delta}px,0)`,
+								`(0,${-this.windowHeight+delta}px)`
 							]
 							this.curPage.pageTranslate = [
 								`(0,0)`,
-								`(0,0)`,
-								`(0,${deltaY}px)`
+								`(${delta}px,0)`,
+								`(0,${delta}px)`
 							]
 							this.nextPage.pageTranslate = [
 								`(0,0)`,
-								`(0,0)`,
-								`(0,${this.windowHeight + deltaY}px)`
+								`(${this.windowWidth+delta}px,0)`,
+								`(0,${this.windowHeight+delta}px)`
 							]
 						}
 					}
-					else if (!this.next && deltaY > 0) {  //首次下滑
-						this.pre = true
-						if (this.prePage.ready) {  //页面准备好了
-							if (this.prePage.isCover) {  //上一页是封面
-								this.cover.pageTranslate = this.cover.pageTranslate = [
-									`(0,0)`,
-									`(0,0)`,
-									`(0,${-this.windowHeight + deltaY}px)`
-								]
-								this.curPage.pageTranslate = [
-									`(0,0)`,
-									`(0,0)`,
-									`(0,${deltaY}px)`
-								]
-							}
-							else {
-								this.prePage.pageTranslate = [
-									`(0,0)`,
-									`(0,0)`,
-									`(0,${-this.windowHeight + deltaY}px)`
-								]
-								this.curPage.pageTranslate = [
-									`(0,0)`,
-									`(0,0)`,
-									`(0,${deltaY}px)`
-								]
-								this.nextPage.pageTranslate = [
-									`(0,0)`,
-									`(0,0)`,
-									`(0,${this.windowHeight + deltaY}px)`
-								]
-							}
+					else if (this.preChapter.ready) {  //上一章已经准备好了
+						this.prePage = {
+							ready: this.preChapter.ready,
+							chapterName: this.preChapter.chapterName,
+							text: this.preChapter.text,
+							pageNum: this.preChapter.totalPage - 1,
+							totalPage: this.preChapter.totalPage,
+							pageTranslate: [
+								`(${-this.windowWidth}px,0)`,
+								`(${-this.windowWidth}px,0)`,
+								`(0,${-this.windowHeight}px)`
+							],
+							canRead: this.preChapter.canRead
 						}
-						else {
-							this.waitForPre = true   //等待上一页准备完毕后跳转
-							uni.showLoading({
-								title: '正在准备上一章'
-							})
-						}
-						
+						this.prePage.pageTranslate = [
+							`(${-this.windowWidth+delta}px,0)`,
+							`(${-this.windowWidth+delta}px,0)`,
+							`(0,${-this.windowHeight+delta}px)`
+						]
+						this.curPage.pageTranslate = [
+							`(0,0)`,
+							`(${delta}px,0)`,
+							`(0,${delta}px)`
+						]
+						this.nextPage.pageTranslate = [
+							`(0,0)`,
+							`(${this.windowWidth+delta}px,0)`,
+							`(0,${this.windowHeight+delta}px)`
+						]
 					}
 				}
 				
@@ -1261,35 +1176,18 @@
 				else {
 					delta = e.changedTouches[0].clientY - this.touchStartY;
 				}
-				if (delta === 0) {
-					if (e.changedTouches[0].clientX<this.windowWidth/3 && !this.waitForNext && !this.waitForPre) { //点击屏幕左1/3为上一页
-						if (this.prePage.ready) {
-							this.goPrePage()
-						}
-						else {
-							this.waitForPre = true   //等待上一页准备完毕后跳转
-							uni.showLoading({
-								title: '正在准备上一章'
-							})
-						}
+				if (delta < 0.8 && delta > -0.8) {   //部分手机点击屏幕时无法做到delta===0
+					if (e.changedTouches[0].clientX<this.windowWidth/3) { //点击屏幕左1/3为上一页
+						this.goPrePage()
 					}
-					else if (e.changedTouches[0].clientX>this.windowWidth/3*2 && !this.waitForNext && !this.waitForPre) { //点击屏幕右1/3为下一页
-					
-						if (this.nextPage.ready) {
-							this.goNextPage()
-						}
-						else {
-							this.waitForNext = true   //等待下一页准备完毕后跳转
-							uni.showLoading({
-								title: '正在准备下一章'
-							})
-						}
+					else if (e.changedTouches[0].clientX>this.windowWidth/3*2) { //点击屏幕右1/3为下一页
+						this.goNextPage()
 					}
 					else if (e.changedTouches[0].clientX<=this.windowWidth/3*2 && e.changedTouches[0].clientX>=this.windowWidth/3) { //点击屏幕中间1/3为呼出菜单
 						this.showMenu()
 					}
 				}
-				else if (!this.waitForNext && !this.waitForPre) {
+				else {
 					if (this.next && this.delta <= 0) {  //下一页
 						this.goNextPage()
 					}
@@ -1415,8 +1313,6 @@
 				this.progressTouched = false
 				this.goToPage(0)
 				uni.hideLoading()
-				uni.setStorageSync('chapterIndexHistory', index)
-				uni.setStorageSync('progressHistory', 0)
 			},
 			
 			/**
@@ -1427,9 +1323,10 @@
 			},
 			
 			/**
-			* 上一页
+			* 上一页,页面轮换
 			**/
 			goPrePage() {
+				
 				if (this.prePage.isCover) {   //如果是首页
 					this.cover.pageTranslate = [
 						`(0,0)`,
@@ -1441,43 +1338,63 @@
 						`(${this.windowWidth}px,0)`,
 						`(0,${this.windowHeight}px)`
 					]
-					this.cover.show = true
 					return 
 				}
-				this.currentPage -= 1
-				this.prePage.pageTranslate = [
-					`(0,0)`,
-					`(0,0)`,
-					`(0,0)`
-				]
-				this.curPage.pageTranslate = [
-					`(0,0)`,
-					`(${this.windowWidth}px,0)`,
-					`(0,${this.windowHeight}px)`
-				]
-				this.nextPage.pageTranslate = [
-					`(0,0)`,
-					`(${2*this.windowWidth}px,0)`,
-					`(0,${2*this.windowHeight}px)`
-				]
-				
-				if (this.currentPage === -1) {   //翻至上一章了
-					uni.showToast({
-						title: this.preChapter.chapterName,
-						icon: 'none'
+				if (!this.prePage.ready && !this.preChapter.ready) {
+					this.waitForPre = true
+					uni.showLoading({
+						title: '正在准备上一章',
+						mask: true
 					})
+					return
+				}
+				let showChapter = false
+				this.currentPage -= 1
+				if (this.currentPage === -1) {   //翻至上一章了
+					showChapter = true
 					this.currentPage = this.preChapter.totalPage - 1
 					this.chapterRotate('pre')
 				}
 				
-				this.$nextTick(()=> {
-					uni.setStorageSync('progressHistory', this.progress)
-				})
+				let cur = [].concat(this.curPage.pageTranslate)
+				let pre = [].concat(this.prePage.pageTranslate)
+				this.goToPage(this.currentPage)
+				this.prePage.pageTranslate = [
+					`(${-this.windowWidth}px,0)`,
+					`(${-this.windowWidth}px,0)`,
+					`(0,${-this.windowHeight}px)`
+				]
+				this.curPage.pageTranslate = pre
+				this.nextPage.pageTranslate = cur
+				setTimeout(()=> {
+					if (showChapter) {
+						uni.showToast({
+							title: this.curChapter.chapterName,
+							icon: 'none'
+						})
+					}
+					this.showAnimation = true
+					this.prePage.pageTranslate = [
+						`(${-this.windowWidth}px,0)`,
+						`(${-this.windowWidth}px,0)`,
+						`(0,${-this.windowHeight}px)`
+					]
+					this.curPage.pageTranslate = [
+						`(0,0)`,
+						`(0,0)`,
+						`(0,0)`
+					]
+					this.nextPage.pageTranslate = [
+						`(0,0)`,
+						`(${this.windowWidth}px,0)`,
+						`(0,${this.windowHeight}px)`
+					]
+				},50)
 			},
 			
 			
 			/**
-			* 下一页
+			* 下一页,页面轮换
 			**/
 			goNextPage() {
 				if (this.nextPage.isEnd) {   //如果翻至本书末尾
@@ -1491,35 +1408,56 @@
 					/*****************************************/
 					return 
 				}
-				this.currentPage += 1
-				this.prePage.pageTranslate = [
-					`(${-this.windowWidth}px,0)`,
-					`(${-2*this.windowWidth}px,0)`,
-					`(0,${-2*this.windowHeight}px)`
-				]
-				this.curPage.pageTranslate = [
-					`(${-this.windowWidth}px,0)`,
-					`(${-this.windowWidth}px,0)`,
-					`(0,${-this.windowHeight}px)`
-				]
-				this.nextPage.pageTranslate = [
-					`(0,0)`,
-					`(0,0)`,
-					`(0,0)`
-				]
-				
-				if (this.currentPage === this.curChapter.totalPage) {   //翻至下一章了
-					uni.showToast({
-						title: this.nextChapter.chapterName,
-						icon: 'none'
+				if (!this.nextPage.ready && !this.nextChapter.ready) {
+					this.waitForNext = true
+					uni.showLoading({
+						title: '正在准备下一章',
+						mask: true
 					})
+					return
+				}
+				this.currentPage += 1
+				let showChapter = false
+				if (this.currentPage === this.curChapter.totalPage) {   //翻至下一章了
+					showChapter = true
 					this.currentPage = 0
 					this.chapterRotate('next')
 				}
 				
-				this.$nextTick(()=> {
-					uni.setStorageSync('progressHistory', this.progress)
-				})
+				let cur = [].concat(this.curPage.pageTranslate)
+				let next = [].concat(this.nextPage.pageTranslate)
+				this.goToPage(this.currentPage)
+				this.prePage.pageTranslate = cur
+				this.curPage.pageTranslate = next
+				this.nextPage.pageTranslate = [
+					`(0,0)`,
+					`(${this.windowWidth}px,0)`,
+					`(0,${this.windowHeight}px)`
+				]
+				setTimeout(()=> {
+					if (showChapter) {
+						uni.showToast({
+							title: this.curChapter.chapterName,
+							icon: 'none'
+						})
+					}
+					this.showAnimation = true
+					this.prePage.pageTranslate = [
+						`(${-this.windowWidth}px,0)`,
+						`(${-this.windowWidth}px,0)`,
+						`(0,${-this.windowHeight}px)`
+					]
+					this.curPage.pageTranslate = [
+						`(0,0)`,
+						`(0,0)`,
+						`(0,0)`
+					]
+					this.nextPage.pageTranslate = [
+						`(0,0)`,
+						`(${this.windowWidth}px,0)`,
+						`(0,${this.windowHeight}px)`
+					]
+				},50)
 			},
 			
 			/**
@@ -1537,6 +1475,7 @@
 						}
 						await this.getOneChapter(this.directoryList[this.curChapter.chapterIndex + 1].chapterId)
 						this.$set(this.nextChapter, 'text', this.tmpChapter.text)
+						this.$set(this.nextChapter, 'canRead', this.tmpChapter.canRead)
 						this.calcNextChapter()
 					}
 					else {
@@ -1554,13 +1493,13 @@
 						}
 						await this.getOneChapter(this.directoryList[this.curChapter.chapterIndex - 1].chapterId)
 						this.$set(this.preChapter, 'text', this.tmpChapter.text)
+						this.$set(this.preChapter, 'canRead', this.tmpChapter.canRead)
 						this.calcPreChapter()
 					}
 					else {
 						this.preChapter = {ready: true,isCover: true}
 					}
 				}
-				uni.setStorageSync('chapterIndexHistory', this.curChapter.chapterIndex)
 			},
 			
 			
@@ -1624,7 +1563,6 @@
 			goToPage(page) {
 				
 				this.currentPage = page
-				this.pageStatus = 0
 				this.showAnimation = false
 				this.curPage = {
 					ready: this.curChapter.ready,
@@ -1636,7 +1574,8 @@
 						`(0,0)`,
 						`(0,0)`,
 						`(0,0)`
-					]
+					],
+					canRead: this.curChapter.canRead
 				}
 				if (this.currentPage === 0) {
 					if (this.preChapter.ready && this.preChapter.isCover) {    //翻至封面了
@@ -1661,7 +1600,8 @@
 								`(${-this.windowWidth}px,0)`,
 								`(${-this.windowWidth}px,0)`,
 								`(0,${-this.windowHeight}px)`
-							]
+							],
+							canRead: this.preChapter.canRead
 						}
 					}
 				}
@@ -1676,7 +1616,8 @@
 							`(${-this.windowWidth}px,0)`,
 							`(${-this.windowWidth}px,0)`,
 							`(0,${-this.windowHeight}px)`
-						]
+						],
+						canRead: this.curChapter.canRead
 					}
 				}
 				if (this.currentPage >= this.curChapter.totalPage - 1) {
@@ -1702,7 +1643,8 @@
 								`(0,0)`,
 								`(${this.windowWidth}px,0)`,
 								`(0,${this.windowHeight}px)`
-							]
+							],
+							canRead: this.nextChapter.canRead
 						}
 					}
 				}
@@ -1717,12 +1659,10 @@
 							`(0,0)`,
 							`(${this.windowWidth}px,0)`,
 							`(0,${this.windowHeight}px)`
-						]
+						],
+						canRead: this.curChapter.canRead
 					}
 				}
-				this.$nextTick(()=> {
-					uni.setStorageSync('progressHistory', this.progress)
-				})
 			},
 			
 			/**
@@ -1737,7 +1677,6 @@
 				await this.getThreeChapter(index)
 				this.goToPage(0)
 				uni.hideLoading()
-				uni.setStorageSync('chapterIndexHistory', index)
 			},
 			
 			/**
@@ -1909,7 +1848,19 @@
 					// 模拟网络时间
 					setTimeout(() => {
 						
-						this.tmpChapter.text = `<p>${chapterId}</p>` + this.text  //模拟数据
+						if (chapterId<50) {
+							this.tmpChapter.text = `<p>${chapterId}</p>` + this.text  //模拟数据
+							
+							// 根据业务实际情况判断该用户是否可阅读,逻辑后端判断
+							this.tmpChapter.canRead = true
+						}
+						else {
+							this.tmpChapter.text = ''  //注意：不能阅读章节请赋值为空字符串
+							
+							// 根据业务实际情况判断该用户是否可阅读,逻辑后端判断
+							this.tmpChapter.canRead = false
+						}
+ 						
 						
 						if (this.simplified === 2) {   //切换为繁体  注意：这里默认数据库中是简体字
 							this.tmpChapter.text = traditionalized(this.tmpChapter.text)
@@ -1932,7 +1883,8 @@
 				this.curChapter = {
 					chapterIndex: index,
 					chapterName: this.directoryList[index].name,
-					text: this.tmpChapter.text
+					text: this.tmpChapter.text,
+					canRead: this.tmpChapter.canRead
 				}
 				
 				if (this.curChapter.chapterIndex !== 0) {
@@ -1940,7 +1892,8 @@
 					this.preChapter = {
 						chapterIndex: index - 1,
 						chapterName: this.directoryList[index - 1].name,
-						text: this.tmpChapter.text
+						text: this.tmpChapter.text,
+						canRead: this.tmpChapter.canRead
 					}
 				}
 				else {
@@ -1952,7 +1905,8 @@
 					this.nextChapter = {
 						chapterIndex: index + 1,
 						chapterName: this.directoryList[index + 1].name,
-						text: this.tmpChapter.text
+						text: this.tmpChapter.text,
+						canRead: this.tmpChapter.canRead
 					}
 				}
 				else {
@@ -1961,6 +1915,17 @@
 				await this.calcCurChapter()
 				await this.calcPreChapter()
 				await this.calcNextChapter()
+			},
+			
+			/**
+			* 购买书籍接口
+			**/
+			buyBook() {
+				//在回调中调用this.initPage()刷新本页
+				uni.showToast({
+					title: '跳转至购买页面，如果未登陆则跳转登陆',
+					icon: 'none'
+				})
 			}
 			
 			
