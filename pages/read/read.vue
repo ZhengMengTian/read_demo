@@ -296,13 +296,20 @@
 			<!-- 目录层 -->
 			<view class="directory" :class="{container0: background === 1, container1: background === 2}"
 			 :style="{left: directoryShow ? 0 : '-100%',color: `${colorList[background - 1]}`,boxShadow:'0 0 10px 0 rgba(0,0,0,.4)'}" @touchend.stop>
-				<view class="bookname">书名</view>
+				<!-- <view class="bookname">书名</view>
 				<scroll-view scroll-y="true" class="directory-list" :scroll-into-view="`chapter${curChapter.chapterIndex}`">
 					<view v-for="(item, index) of directoryList" :key="item.chapterId" class="directory-listItem" :class="{active: index === curChapter.chapterIndex}"
 					 :id="`chapter${index}`" @click="goToChapter(index)">
 						{{item.name}}
 					</view>
-				</scroll-view>
+				</scroll-view> -->
+				<virtual-list :items="directoryList" :size="30" :remain="16">
+					<template v-slot:default="slotItem">
+						<view style="height: 30px;font-size: 13px;">
+							{{slotItem.item.name}}
+						</view>
+					</template>
+				</virtual-list>
 			</view>
 		</view>
 		
@@ -312,11 +319,13 @@
 <script>
 	import myProgress from '../../components/myProgress.vue'
 	import battery from '../../components/battery.vue'
+	import virtualList from '../../components/virtualList.vue'
 	import { traditionalized, simplized, dateToStr } from '../../utils/utils.js'
 	export default {
 		components:{
 			myProgress,
-			battery
+			battery,
+			virtualList
 		},
 		data() {
 			return {
@@ -626,7 +635,8 @@
 				]
 				await this.calcHeight()
 				await this.getDirectoryList()
-				if (this.history.chapterIndex > this.directoryList.length - 1) {
+				
+				if (this.history.chapterIndex > this.directoryList.length - 1 || !this.history.chapterIndex) {
 					this.history.chapterIndex = 0
 				}
 				await this.getThreeChapter(this.history.chapterIndex)
@@ -1820,7 +1830,7 @@
 					// 模拟网络时间
 					setTimeout(() => {
 						// 生成目录，正常是后端传过来
-						for (let i=1;i<=100;i++) {
+						for (let i=1;i<=1000;i++) {
 							this.directoryList.push({
 								chapterId: i,   //注意：这个chapterId用于获取章节内容而不是index
 								name: `第${i}章 测试测试测试测试测`
