@@ -1986,8 +1986,13 @@ var render = function() {
                   }
                 },
                 [
+                  _c(
+                    "v-uni-view",
+                    { staticClass: _vm._$g(111, "sc"), attrs: { _i: 111 } },
+                    [_vm._v("书名")]
+                  ),
                   _c("virtual-list", {
-                    attrs: { _i: 111 },
+                    attrs: { _i: 112 },
                     scopedSlots: _vm._u(
                       [
                         {
@@ -2001,9 +2006,9 @@ var render = function() {
                                     height: "30px",
                                     "font-size": "13px"
                                   },
-                                  attrs: { _i: "113-" + _si }
+                                  attrs: { _i: "114-" + _si }
                                 },
-                                [_vm._v(_svm._$g("113-" + _si, "t0-0"))]
+                                [_vm._v(_svm._$g("114-" + _si, "t0-0"))]
                               )
                             ]
                           }
@@ -2011,7 +2016,7 @@ var render = function() {
                       ],
                       null,
                       false,
-                      3413867131
+                      3918339099
                     )
                   })
                 ],

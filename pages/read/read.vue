@@ -303,6 +303,7 @@
 						{{item.name}}
 					</view>
 				</scroll-view> -->
+				<view class="bookname">书名</view>
 				<virtual-list :items="directoryList" :size="30" :remain="16">
 					<template v-slot:default="slotItem">
 						<view style="height: 30px;font-size: 13px;">
