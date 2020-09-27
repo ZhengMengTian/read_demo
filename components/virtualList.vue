@@ -23,8 +23,8 @@
 					  'transform': `translateY(${offset}px)`
 				  }">
 				<view class="item-wrap" 
-					  v-for="item in visibleData" 
-					  :key="item.id">
+					  v-for="(item, index) in visibleData" 
+					  :key="index">
 					<slot :item="item"></slot>
 				</view>
 			</view>
@@ -42,6 +42,10 @@
 			remain: Number,
 			// item大小
 			size: Number,
+			// 当前章节
+			active: Number,
+			// 可使区域高度
+			scrollHeight: Number
 		},
 		data() {
 			return {
@@ -54,6 +58,10 @@
 				scrollTop: 0,
 				y: 0
 			}
+		},
+		created() {
+			//当前章节滚动至顶部
+			this.scrollTop = this.size * this.active
 		},
 		computed: {
 			// 预留项
@@ -68,9 +76,6 @@
 				const start = this.start - this.preCount;
 				const end = this.end + this.nextCount;
 				return this.items.slice(start, end);
-			},
-			scrollHeight() {
-				return this.remain * this.size
 			},
 			localHeight() {
 				return this.items.length * this.size

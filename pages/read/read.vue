@@ -231,9 +231,9 @@
 				<!-- 章节进度条 -->
 				<view class="progress-box">
 					<text @click="goPreChapter">上一章</text>
-					<view style="flex: 1;height: 100%;padding: 0 10px;">
-						<my-progress :total="directoryList.length - 1" :index="curChapter.chapterIndex" @indexChange="indexChange"
-						@progressEnd="progressEnd" @progressStart="progressStart" ></my-progress>
+					<view style="flex: 1;height: 100%;padding: 8px 0;">
+						<slider :value="curChapter.chapterIndex" activeColor="#000" :block-size="20" 
+						:max="directoryList.length - 1" @changing="slideChanging" @change="slideChange"/>
 					</view>
 					<text @click="goNextChapter">下一章</text>
 				</view>
@@ -294,19 +294,15 @@
 			</view>
 			
 			<!-- 目录层 -->
-			<view class="directory" :class="{container0: background === 1, container1: background === 2}"
+			<view class="directory" :class="{container0: background === 1, container1: background === 2}" v-if="directoryShowBefore"
 			 :style="{left: directoryShow ? 0 : '-100%',color: `${colorList[background - 1]}`,boxShadow:'0 0 10px 0 rgba(0,0,0,.4)'}" @touchend.stop>
-				<!-- <view class="bookname">书名</view>
-				<scroll-view scroll-y="true" class="directory-list" :scroll-into-view="`chapter${curChapter.chapterIndex}`">
-					<view v-for="(item, index) of directoryList" :key="item.chapterId" class="directory-listItem" :class="{active: index === curChapter.chapterIndex}"
-					 :id="`chapter${index}`" @click="goToChapter(index)">
-						{{item.name}}
-					</view>
-				</scroll-view> -->
+			 
 				<view class="bookname">书名</view>
-				<virtual-list :items="directoryList" :size="30" :remain="16">
+				<!--  :size="40"——每一栏高度为40px  :scrollHeight="windowHeight - 60"——书名的高度为60px -->
+				<virtual-list :items="directoryList" :size="40" :remain="16" :active="curChapter.chapterIndex" :scrollHeight="windowHeight - 60">
 					<template v-slot:default="slotItem">
-						<view style="height: 30px;font-size: 13px;">
+						<view class="directory-listItem" :class="{active: slotItem.item.index === curChapter.chapterIndex}"
+						@click="goToChapter(slotItem.item.index)">
 							{{slotItem.item.name}}
 						</view>
 					</template>
@@ -318,13 +314,11 @@
 </template>
 
 <script>
-	import myProgress from '../../components/myProgress.vue'
 	import battery from '../../components/battery.vue'
 	import virtualList from '../../components/virtualList.vue'
 	import { traditionalized, simplized, dateToStr } from '../../utils/utils.js'
 	export default {
 		components:{
-			myProgress,
 			battery,
 			virtualList
 		},
@@ -442,6 +436,7 @@
 				itemShow: false,  // 菜单栏动画控制
 				settingShow: false,  //设置栏动画控制
 				directoryShow: false,  //目录动画控制
+				directoryShowBefore: false,  // 目录渲染
 				turnPageTime: .5,  //翻页动画时间
 				
 				maxFontSize: 30,   //最大字体大小，px
@@ -1276,6 +1271,7 @@
 				this.settingShow = false
 				this.directoryShow = false
 				setTimeout(() => {
+					this.directoryShowBefore = false
 					this.menuShow = false
 				},300)
 			},
@@ -1299,38 +1295,34 @@
 					plus.navigator.setFullscreen(true);
 				// #endif
 				this.itemShow = false
+				this.directoryShowBefore = true
 				setTimeout(() => {
 					this.directoryShow = true
 				},300)
 			},
 			
 			/**
-			* 开始拖动进度条
+			* 拖动进度条
 			**/
-			progressStart() {
+			slideChanging(e){
 				this.progressTouched = true
+				this.chapterProgress = e.detail.value
 			},
 			
 			/**
 			* 结束拖动进度条
 			**/
-			async progressEnd(index) {
+			async slideChange(e) {
 				
-				this.chapterProgress = index
+				this.chapterProgress = e.detail.value
 				uni.showLoading({
 					title: '加载中'
 				})
-				await this.getThreeChapter(index)
+				await this.getThreeChapter(e.detail.value)
 				this.progressTouched = false
 				this.goToPage(0)
 				uni.hideLoading()
-			},
-			
-			/**
-			* 拖动进度条
-			**/
-			indexChange(index) {
-				this.chapterProgress = index
+				
 			},
 			
 			/**
@@ -1820,25 +1812,59 @@
 			/**
 			* 获取目录
 			**/
-			getDirectoryList() {
+			getDirectoryList(showLoading) {
 				
 				/*****************************************/
 				/**********    根据需要更改    ************/
 				/*****************************************/
 				
+				if (showLoading) {
+					uni.showLoading({
+						title: '加载中',
+						mask: true
+					})
+				}
 				
 				return new Promise((resolve, reject) => {
 					// 模拟网络时间
 					setTimeout(() => {
+						
+						if (showLoading) {
+							uni.hideLoading()
+						}
+						
 						// 生成目录，正常是后端传过来
 						for (let i=1;i<=1000;i++) {
 							this.directoryList.push({
+								index: i-1,
 								chapterId: i,   //注意：这个chapterId用于获取章节内容而不是index
-								name: `第${i}章 测试测试测试测试测`
+								name: `第${i}章 测试测试测试测试测测`
 							})
 						}
 						resolve()
-					}, 1000)
+					}, 300)
+					
+				}).then(() => {}, ()=> {
+					
+					// 此处是网络连接失败的逻辑
+					uni.hideLoading()
+					return new Promise((resolve, reject)=> {
+						uni.showModal({
+							title: '连接失败',
+							content: '请检查您的网络状态',
+							confirmText: '重试',
+							success: async(res) => {
+								if (res.confirm) {
+									//用户点击了重试
+									await this.getDirectoryList(true)
+									resolve()
+								} else if (res.cancel) {
+									//用户点击取消
+									this.back()
+								}
+							}
+						})
+					})
 					
 				})
 				/*****************************************/
@@ -1850,16 +1876,28 @@
 			/**
 			* 获取一章数据
 			**/
-			getOneChapter(chapterId) {
+			getOneChapter(chapterId, showLoading) {
 				
 				/*****************************************/
 				/**********    根据需要更改    ************/
 				/*****************************************/
+				
+				if (showLoading) {
+					uni.showLoading({
+						title: '加载中',
+						mask: true
+					})
+				}
+				
 				return new Promise((resolve, reject) => {
 					// 模拟网络时间
 					setTimeout(() => {
 						
-						if (chapterId<50) {
+						if (showLoading) {
+							uni.hideLoading()
+						}
+						
+						if (chapterId<500) {
 							this.tmpChapter.text = `<p>${chapterId}</p>` + this.text  //模拟数据
 							
 							// 根据业务实际情况判断该用户是否可阅读,逻辑后端判断
@@ -1879,6 +1917,28 @@
 						
 						resolve()
 					}, 300)
+				}).then(() => {}, ()=> {
+					
+					// 此处是网络连接失败的逻辑
+					uni.hideLoading()
+					return new Promise((resolve, reject)=> {
+						uni.showModal({
+							title: '连接失败',
+							content: '请检查您的网络状态',
+							confirmText: '重试',
+							success: async(res) => {
+								if (res.confirm) {
+									//用户点击了重试
+									await this.getOneChapter(chapterId, true)
+									resolve()
+								} else if (res.cancel) {
+									//用户点击取消
+									this.back()
+								}
+							}
+						})
+					})
+					
 				})
 				/*****************************************/
 				/*****************************************/
@@ -2054,23 +2114,19 @@
 			transition: left .1s;
 			.bookname{
 				padding: 20px 0 20px 10px;
-				width: 100%;
+				height: 60px;
 				font-size: 18px;
 			}
-			.directory-list{
-				flex:1;
-				min-height: 200px;
-				.directory-listItem{
-					display: flex;
-					align-items: center;
-					padding-left: 10px;
-					min-height: 40px;
-					font-size: 14px;
-					border-bottom: #eee solid 1px;
-				}
-				.active{
-					color: red
-				}
+			.directory-listItem{
+				display: flex;
+				align-items: center;
+				padding-left: 10px;
+				height: 40px;
+				font-size: 14px;
+				border-bottom: #eee solid 1px;
+			}
+			.active{
+				color: red
 			}
 		}
 		.menu-bottom{
