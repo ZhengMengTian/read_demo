@@ -300,10 +300,10 @@
 				<view class="bookname">书名</view>
 				<!--  :size="40"——每一栏高度为40px  :scrollHeight="windowHeight - 60"——书名的高度为60px -->
 				<virtual-list :items="directoryList" :size="40" :remain="16" :active="curChapter.chapterIndex" :scrollHeight="windowHeight - 60">
-					<template v-slot:default="slotItem">
-						<view class="directory-listItem" :class="{active: slotItem.item.index === curChapter.chapterIndex}"
-						@click="goToChapter(slotItem.item.index)">
-							{{slotItem.item.name}}
+					<template v-slot="{item,active}">
+						<view class="directory-listItem" :class="{active: item.index == active}"
+						@click="goToChapter(item.index)">
+							{{item.name}}
 						</view>
 					</template>
 				</virtual-list>
@@ -517,7 +517,6 @@
 			getSystemInfo() {
 				
 				const { windowWidth, windowHeight, statusBarHeight, platform, pixelRatio } = uni.getSystemInfoSync()
-				
 				//获取一些必要的设备参数
 				this.statusBarHeight = statusBarHeight
 				this.windowWidth = windowWidth
@@ -648,7 +647,7 @@
 			calcHeight() {
 				if (this.contentHeight) {
 					let lineHeight = this.fontSize * this.lineHeight;
-					// #ifdef APP-PLUS
+					// #ifdef APP-PLUS || MP-WEIXIN
 						lineHeight = Math.floor(lineHeight*this.pixelRatio)/this.pixelRatio
 					// #endif
 					let lineNum = Math.floor((this.contentHeight + Math.floor((lineHeight - this.fontSize)/2)) / lineHeight)
@@ -662,7 +661,8 @@
 								let height = data.height;
 								this.contentHeight = height;
 								let lineHeight = this.fontSize * this.lineHeight;
-								// #ifdef APP-PLUS
+								
+								// #ifdef APP-PLUS || MP-WEIXIN
 									lineHeight = Math.floor(lineHeight*this.pixelRatio)/this.pixelRatio
 								// #endif
 								let lineNum = Math.floor((height + Math.floor((lineHeight - this.fontSize)/2)) / lineHeight)
@@ -686,7 +686,8 @@
 						const query = uni.createSelectorQuery().in(this);
 						query.select('#curChapter').boundingClientRect(data => {
 							let height = data.height;
-							// #ifdef APP-PLUS
+							// #ifdef APP-PLUS || MP-WEIXIN
+							
 								height = Math.round(height*this.pixelRatio)/this.pixelRatio
 							// #endif
 							this.curChapter.totalPage = Math.ceil(height/this.innerHeight) || 1
@@ -708,7 +709,7 @@
 						const query = uni.createSelectorQuery().in(this);
 						query.select('#preChapter').boundingClientRect(data => {
 							let height = data.height;
-							// #ifdef APP-PLUS
+							// #ifdef APP-PLUS || MP-WEIXIN
 								height = Math.round(height*this.pixelRatio)/this.pixelRatio
 							// #endif
 							this.preChapter.totalPage = Math.ceil(height/this.innerHeight) || 1
@@ -742,7 +743,7 @@
 						const query = uni.createSelectorQuery().in(this);
 						query.select('#nextChapter').boundingClientRect(data => {
 							let height = data.height;
-							// #ifdef APP-PLUS
+							// #ifdef APP-PLUS || MP-WEIXIN
 								height = Math.round(height*this.pixelRatio)/this.pixelRatio
 							// #endif
 							this.nextChapter.totalPage = Math.ceil(height/this.innerHeight) || 1

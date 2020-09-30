@@ -25,7 +25,7 @@
 				<view class="item-wrap" 
 					  v-for="(item, index) in visibleData" 
 					  :key="index">
-					<slot :item="item"></slot>
+					<slot :item="item" :active="active"></slot>
 				</view>
 			</view>
 		</scroll-view>
