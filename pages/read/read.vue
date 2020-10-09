@@ -69,7 +69,7 @@
 		<view class="cover container" :class="{container0: background === 1, container1: background === 2}"
 			:style="{zIndex: 201, transform: `translate${cover.pageTranslate[turnType]}`, transition: `transform ${showAnimation?turnPageTime:0}s`,
 			boxShadow:showShadow&&turnType===0?'0 0 10px 0 rgba(0,0,0,.4)':''}"
-			@touchstart="coverTouchStart" @touchend="coverTouchEnd" @touchmove="coverTouchMove"
+			@touchstart="coverTouchStart" @touchend="coverTouchEnd" @touchmove="coverTouchMove" @touchcancel="coverTouchcancel"
 		>
 			<image>
 				
@@ -133,7 +133,7 @@
 		<view class="container" :class="{container0: background === 1, container1: background === 2}"
 			:style="{zIndex: 101, transform: `translate${curPage.pageTranslate[turnType]}`, transition: `transform ${showAnimation?turnPageTime:0}s`,
 			boxShadow:showShadow&&turnType===0?'0 0 10px 0 rgba(0,0,0,.4)':''}"
-			@touchstart="touchStart" @touchend="touchEnd" @touchmove="touchMove"
+			@touchstart="touchStart" @touchend="touchEnd" @touchmove="touchMove" @touchcancel="touchcancel"
 		>
 			<!-- 章节名 -->
 			<view class="chapter">
@@ -864,7 +864,7 @@
 			**/
 			coverTouchEnd(e) {
 				this.showAnimation = true
-				this.showShadow = false;
+				this.showShadow = false
 				let delta = 0
 				if (this.turnType === 0 || this.turnType === 1) {  //翻页方式为‘覆盖’或者‘左右平移’
 					delta = e.changedTouches[0].clientX - this.touchStartX;
@@ -924,6 +924,28 @@
 				this.next = false
 				this.pre = false
 				
+			},
+			
+			/**
+			* 触摸取消（封面）
+			**/
+			coverTouchcancel() {
+				
+				// 取消翻页
+				this.showAnimation = false
+				this.showShadow = false
+				this.cover.pageTranslate = [
+					`(0,0)`,
+					`(0,0)`,
+					`(0,0)`
+				]
+				this.curPage.pageTranslate = [
+					`(0,0)`,
+					`(${this.windowWidth}px,0)`,
+					`(0,${this.windowHeight}px)`
+				]
+				this.next = false
+				this.pre = false
 			},
 			
 			/**
@@ -1175,7 +1197,7 @@
 			**/
 			touchEnd(e) {
 				this.showAnimation = true
-				this.showShadow = false;
+				this.showShadow = false
 				let delta = 0
 				if (this.turnType === 0 || this.turnType === 1) {
 					delta = e.changedTouches[0].clientX - this.touchStartX;
@@ -1246,7 +1268,37 @@
 				
 			},
 			
-			
+			/**
+			* 取消触摸
+			**/
+			touchcancel() {
+				
+				//取消翻页,重置页面
+				this.showAnimation = false
+				this.showShadow = false
+				this.prePage.pageTranslate = [
+					`(${-this.windowWidth}px,0)`,
+					`(${-this.windowWidth}px,0)`,
+					`(0,${-this.windowHeight}px)`
+				]
+				this.curPage.pageTranslate = [
+					`(0,0)`,
+					`(0,0)`,
+					`(0,0)`
+				]
+				this.nextPage.pageTranslate = [
+					`(0,0)`,
+					`(${this.windowWidth}px,0)`,
+					`(0,${this.windowHeight}px)`
+				]
+				this.cover.pageTranslate = [
+					`(${-this.windowWidth}px,0)`,
+					`(${-this.windowWidth}px,0)`,
+					`(0,${-this.windowHeight}px)`
+				]
+				this.next = false
+				this.pre = false
+			},
 			
 			/**
 			* 呼出菜单
